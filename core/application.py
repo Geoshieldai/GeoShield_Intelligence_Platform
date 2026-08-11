@@ -50,7 +50,6 @@ class GeoShieldApplication:
 
         logger.info("Loading Engine Registry...")
 
-        # Initialize Satellite Engine
         satellite_engine = SatelliteEngine()
 
         satellite_engine.register_provider("Sentinel-1")
@@ -83,3 +82,12 @@ class GeoShieldApplication:
             "registered_engines": self.engines.list_engines(),
             "satellite_providers": providers,
         }
+
+    def reload(self):
+        """
+        Reload the GeoShield platform.
+        """
+
+        self.initialize()
+
+        return self.status()
