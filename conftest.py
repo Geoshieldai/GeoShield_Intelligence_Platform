@@ -1,7 +1,12 @@
-import sys
+"""
+Pytest configuration for Planet satellite integration tests.
+"""
+
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+from dotenv import load_dotenv
 
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+
+load_dotenv(PROJECT_ROOT / ".env")

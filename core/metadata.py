@@ -14,6 +14,6 @@ AUTHOR = "David Omondi Ouma"
 
 ORGANIZATION = "GeoShield Intelligence Platform"
 
-WEBSITE = "https://github.com/davyla254-beep/GeoShield_Intelligence_Platform"
+WEBSITE = "https://github.com/Geoshieldai/GeoShield_Intelligence_Platform"
 
 CURRENT_VERSION = "0.1.0"

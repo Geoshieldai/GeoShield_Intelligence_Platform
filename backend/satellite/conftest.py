@@ -1,15 +1,25 @@
 """
-Pytest configuration for Planet satellite integration tests.
+Pytest configuration for GeoShield satellite tests.
 """
 
+from pathlib import Path
 import os
 
 import pytest
+from dotenv import load_dotenv
+
+
+# Project root:
+# G:\My Drive\GeoShield_Project
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+# Load the local .env file into the pytest process.
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 def pytest_collection_modifyitems(config, items):
     """
-    Skip Planet live integration tests when PLANET_API_KEY is unavailable.
+    Skip live Planet integration tests when PLANET_API_KEY is unavailable.
     """
 
     planet_key = os.getenv("PLANET_API_KEY", "").strip()
@@ -17,20 +27,10 @@ def pytest_collection_modifyitems(config, items):
     if planet_key:
         return
 
-    skip_marker = pytest.mark.skip(
+    skip_live = pytest.mark.skip(
         reason="PLANET_API_KEY is not configured."
     )
 
     for item in items:
-        path = str(item.fspath).replace("\\", "/")
-
-        if "/backend/satellite/" in path and (
-            "test_asset" in path
-            or "test_latest" in path
-            or "test_search" in path
-            or "test_service" in path
-            or "test_permissions" in path
-            or "test_sdk" in path
-            or "test_manager" in path
-        ):
-            item.add_marker(skip_marker)
+        if "live" in item.keywords:
+            item.add_marker(skip_live)

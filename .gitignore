@@ -1,23 +1,36 @@
-# ==========================
+# ============================================================
+# GeoShield AI Enterprise — Git Ignore
+# ============================================================
+
 # Python
-# ==========================
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 
-# Virtual Environment
+# Virtual environments
 .venv/
 venv/
 
 # VS Code
 .vscode/
 
-# Environment variables
+# Environment / secrets
 .env
+.env.*
+!.env.example
 
-# Python cache
+*.pem
+*.key
+*.secret
+*.token
+
+# Copernicus authentication artifacts
+cdse_token.txt
+
+# Testing / type checking
 .pytest_cache/
+.mypy_cache/
 
 # Jupyter
 .ipynb_checkpoints/
@@ -25,34 +38,28 @@ venv/
 # Logs
 *.log
 
-# ==========================
-# Operating System
-# ==========================
+# Operating system
 Thumbs.db
 .DS_Store
 
-# ==========================
 # Build files
-# ==========================
 build/
 dist/
 
-# ==========================
 # GeoShield backups
-# ==========================
 backups/
+*.backup
+*.bak
 
 # Temporary files
 *.tmp
 
-# ==========================
-# Large project data (DO NOT PUSH)
-# ==========================
+# Large project data — DO NOT PUSH
 Practical data/
 outputs/
 database/*.db
 
-# GIS & Remote Sensing datasets
+# GIS / Remote Sensing datasets
 *.tif
 *.tiff
 *.zip
