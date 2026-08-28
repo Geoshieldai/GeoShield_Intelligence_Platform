@@ -36,8 +36,11 @@ class CopernicusAuthManager:
     def is_token_valid(self) -> bool:
         """Return True when a usable token is currently cached."""
 
+        token = self.state.access_token
+
         return (
-            self.state.access_token is not None
+            token is not None
+            and bool(token)
             and time.time() < self.state.expires_at
         )
 
@@ -47,10 +50,9 @@ class CopernicusAuthManager:
         if not self.is_token_valid():
             return 0.0
 
-        return max(
-            self.state.expires_at - time.time(),
-            0.0,
-        )
+        remaining = self.state.expires_at - time.time()
+
+        return max(remaining, 0.0)
 
     def _validate_configuration(self) -> None:
         """Validate required Copernicus configuration."""
@@ -70,15 +72,19 @@ class CopernicusAuthManager:
                 "CDSE client ID is not configured."
             )
 
+        if not settings.cdse_token_url:
+            raise CopernicusConfigurationError(
+                "CDSE token URL is not configured."
+            )
+
     def authenticate(self) -> str:
-        """Authenticate against Copernicus."""
+        """Authenticate against Copernicus Data Space."""
 
         self._validate_configuration()
 
         attempts = self.max_retries + 1
 
         for attempt in range(1, attempts + 1):
-
             try:
                 response = requests.post(
                     settings.cdse_token_url,
@@ -92,23 +98,40 @@ class CopernicusAuthManager:
                 )
 
             except requests.RequestException as exc:
-
                 if attempt >= attempts:
                     raise CopernicusNetworkError(
                         "Unable to reach Copernicus authentication service."
                     ) from exc
 
                 time.sleep(1)
-
                 continue
 
             if response.status_code in (400, 401, 403):
+                detail = ""
+
+                try:
+                    payload = response.json()
+
+                    error = payload.get("error")
+                    description = payload.get("error_description")
+
+                    if error:
+                        detail = f" Error: {error}."
+
+                    if description:
+                        detail += f" {description}"
+
+                except ValueError:
+                    pass
+
                 raise CopernicusAuthenticationError(
                     "Copernicus rejected the authentication request."
+                    + detail
                 )
 
             try:
                 response.raise_for_status()
+
             except requests.RequestException as exc:
                 if attempt >= attempts:
                     raise CopernicusNetworkError(
@@ -116,23 +139,32 @@ class CopernicusAuthManager:
                     ) from exc
 
                 time.sleep(1)
-
                 continue
 
             try:
                 payload = response.json()
+
             except ValueError as exc:
                 raise CopernicusAuthenticationError(
                     "Copernicus returned an invalid authentication response."
                 ) from exc
 
             token = payload.get("access_token")
+
+            if not isinstance(token, str) or not token:
+                raise CopernicusAuthenticationError(
+                    "Copernicus returned no valid access token."
+                )
+
             expires_in = payload.get("expires_in", 1800)
 
-            if not token:
+            try:
+                expires_in_seconds = int(expires_in)
+
+            except (TypeError, ValueError) as exc:
                 raise CopernicusAuthenticationError(
-                    "Copernicus returned no access token."
-                )
+                    "Copernicus returned an invalid token lifetime."
+                ) from exc
 
             safety_margin = 60
 
@@ -140,7 +172,7 @@ class CopernicusAuthManager:
 
             self.state.expires_at = (
                 time.time()
-                + max(int(expires_in) - safety_margin, 1)
+                + max(expires_in_seconds - safety_margin, 1)
             )
 
             return token
@@ -155,4 +187,11 @@ class CopernicusAuthManager:
         if not self.is_token_valid():
             return self.authenticate()
 
-        return self.state.access_token
+        token = self.state.access_token
+
+        if token is None:
+            raise CopernicusAuthenticationError(
+                "Token state is invalid: cached token is missing."
+            )
+
+        return token

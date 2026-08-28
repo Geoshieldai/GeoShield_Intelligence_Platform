@@ -1,4 +1,4 @@
-from backend.routes.dashboard import router as dashboard_router
+﻿from backend.routes.dashboard import router as dashboard_router
 from backend.routes.county import router as county_router
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
@@ -13,6 +13,9 @@ from backend.routes.resources import router as resources_router
 from backend.routes.alerts import router as alerts_router
 
 from backend.api.satellite import router as satellite_router
+from backend.api.sentinel2 import router as sentinel2_router
+from backend.api.satellites import router as satellites_router
+
 
 @asynccontextmanager
 async def lifespan(app):
@@ -43,6 +46,24 @@ app.include_router(
     prefix="/satellite",
     tags=["Satellite"]
 )
+
+app.include_router(
+    satellites_router,
+    prefix="/satellites",
+    tags=["Satellite Intelligence"],
+)
+
+app.include_router(
+    sentinel2_router,
+    prefix="/sentinel2",
+    tags=["Sentinel-2"]
+)
+
+app.include_router(
+    satellites_router,
+    tags=["Satellites"]
+)
+
 
 app.mount(
     "/static",

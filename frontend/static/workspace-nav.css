@@ -1,0 +1,173 @@
+﻿/* ============================================================
+   GEOSHIELD WORKSPACE NAVIGATOR
+   Compact right-center navigation
+   ============================================================ */
+
+#workspaceNavigator {
+    position: fixed;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    z-index: 2147483647;
+
+    width: 38px;
+    padding: 4px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+
+    box-sizing: border-box;
+
+    border-radius: 13px;
+
+    background: rgba(31, 31, 31, 0.94);
+
+    border: 1px solid rgba(255, 255, 255, 0.09);
+
+    box-shadow:
+        0 5px 18px rgba(0, 0, 0, 0.30);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    pointer-events: auto;
+    user-select: none;
+}
+
+/* ============================================================
+   ARROWS
+   ============================================================ */
+
+.workspace-nav-arrow {
+    width: 30px;
+    height: 30px;
+
+    margin: 0;
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #cfd3d8;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 18px;
+    font-weight: 700;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    pointer-events: auto;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        transform 0.12s ease,
+        opacity 0.15s ease;
+}
+
+.workspace-nav-arrow:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.10);
+    color: #ffffff;
+    transform: scale(1.06);
+}
+
+.workspace-nav-arrow:active:not(:disabled) {
+    transform: scale(0.92);
+}
+
+.workspace-nav-arrow:disabled {
+    opacity: 0.22;
+    cursor: default;
+    transform: none;
+}
+
+.workspace-nav-arrow span {
+    display: block;
+    line-height: 1;
+}
+
+/* ============================================================
+   DIVIDER
+   ============================================================ */
+
+.workspace-nav-divider {
+    width: 18px;
+    height: 1px;
+
+    margin: 1px 0;
+
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* ============================================================
+   ACTIVE WORKSPACE
+   ============================================================ */
+
+#workspaceNavigator[data-workspace="map"]
+.workspace-nav-arrow:first-child {
+    color: #ffffff;
+}
+
+#workspaceNavigator[data-workspace="intelligence"]
+.workspace-nav-arrow:last-child {
+    color: #ffffff;
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+    #workspaceNavigator {
+        right: 7px;
+        width: 35px;
+        padding: 3px;
+        border-radius: 11px;
+    }
+
+    .workspace-nav-arrow {
+        width: 28px;
+        height: 28px;
+        font-size: 17px;
+    }
+
+    .workspace-nav-divider {
+        width: 16px;
+    }
+}
+
+/* ============================================================
+   VERY SMALL SCREENS
+   ============================================================ */
+
+@media (max-width: 450px) {
+
+    #workspaceNavigator {
+        right: 5px;
+    }
+
+    .workspace-nav-arrow {
+        width: 27px;
+        height: 27px;
+        font-size: 16px;
+    }
+}

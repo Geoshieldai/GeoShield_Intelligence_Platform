@@ -1,7 +1,35 @@
-"""
+﻿"""
 GeoShield Sentinel-2 Downloader
 
-Download manager for Sentinel-2 products.
+Authenticated, resumable Sentinel-2 product downloader for the
+Copernicus Data Space Ecosystem.
+
+Architecture:
+
+    STAC Product Name
+          |
+          v
+    OData Product Lookup
+          |
+          v
+    Product UUID
+          |
+          v
+    Authenticated Download
+          |
+          v
+    Resumable ZIP
+          |
+          v
+    Verified Final Product
+
+The STAC catalog may expose an S3 path such as:
+
+    s3://eodata/...
+
+That path is metadata and is NOT treated as an HTTP download URL.
+The actual product is downloaded through the authenticated CDSE
+OData download endpoint.
 """
 
 from __future__ import annotations
@@ -9,8 +37,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
-from urllib.request import Request, urlopen
+from urllib.parse import quote
 
+import requests
+
+from core.auth.copernicus import CopernicusAuthManager
 from core.connectors.connector_result import ConnectorResult
 
 
@@ -31,7 +62,7 @@ class Sentinel2DownloadRequest:
         )
 
     def to_dict(self) -> dict[str, str | None]:
-        """Convert the request to a dictionary."""
+        """Convert the request into a dictionary."""
 
         return {
             "product_id": self.product_id,
@@ -41,21 +72,52 @@ class Sentinel2DownloadRequest:
 
 
 class Sentinel2Downloader:
-    """Download manager for Sentinel-2 products."""
+    """
+    Authenticated and resumable Sentinel-2 product downloader.
+
+    Features:
+
+        - Copernicus OAuth authentication
+        - OData product UUID resolution
+        - OData download URL generation
+        - Streaming downloads
+        - HTTP Range resume support
+        - Temporary .part files
+        - Retry handling
+        - Progress reporting
+        - Atomic finalization
+        - Download-size validation
+        - Safe error reporting
+    """
 
     provider_name = "Sentinel-2"
+
+    ODATA_BASE_URL = (
+        "https://catalogue.dataspace.copernicus.eu/odata/v1"
+    )
+
+    DOWNLOAD_BASE_URL = (
+        "https://download.dataspace.copernicus.eu/odata/v1"
+    )
+
+    CHUNK_SIZE = 4 * 1024 * 1024
+
+    DEFAULT_MAX_RETRIES = 3
 
     def __init__(
         self,
         timeout: int = 120,
         user_agent: str = "GeoShield/0.1.0",
+        auth_manager: CopernicusAuthManager | None = None,
+        session: requests.Session | None = None,
         transport: Callable[
             [str, Path, int, str],
             None,
         ]
         | None = None,
+        max_retries: int = DEFAULT_MAX_RETRIES,
     ) -> None:
-        """Initialize the downloader."""
+        """Initialize the Sentinel-2 downloader."""
 
         if timeout <= 0:
             raise ValueError(
@@ -67,9 +129,34 @@ class Sentinel2Downloader:
                 "User agent is required."
             )
 
+        if max_retries < 0:
+            raise ValueError(
+                "max_retries cannot be negative."
+            )
+
         self.timeout = timeout
         self.user_agent = user_agent
+
+        self.auth_manager = (
+            auth_manager
+            if auth_manager is not None
+            else CopernicusAuthManager()
+        )
+
+        self.session = (
+            session
+            if session is not None
+            else requests.Session()
+        )
+
         self.transport = transport
+        self.max_retries = max_retries
+
+        self.session.headers.update(
+            {
+                "User-Agent": self.user_agent,
+            }
+        )
 
     def create_request(
         self,
@@ -110,20 +197,136 @@ class Sentinel2Downloader:
             "url": request.url,
         }
 
+    def resolve_product_uuid(
+        self,
+        product_name: str,
+    ) -> str:
+        """
+        Resolve a Sentinel-2 product name to its Copernicus UUID.
+
+        The STAC catalog returns the product name while the
+        OData download API requires the product UUID.
+        """
+
+        name = product_name.strip()
+
+        if not name:
+            raise ValueError(
+                "Product name is required."
+            )
+
+        token = self.auth_manager.get_token()
+
+        url = f"{self.ODATA_BASE_URL}/Products"
+
+        escaped_name = name.replace(
+            "'",
+            "''",
+        )
+
+        params = {
+            "$filter": f"Name eq '{escaped_name}'",
+            "$top": "1",
+        }
+
+        response = self.session.get(
+            url,
+            params=params,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+            },
+            timeout=self.timeout,
+        )
+
+        if not response.ok:
+            raise RuntimeError(
+                "Copernicus OData product lookup failed "
+                f"(HTTP {response.status_code}). "
+                f"{self._safe_error_detail(response)}"
+            )
+
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise RuntimeError(
+                "Copernicus OData product lookup returned "
+                "invalid JSON."
+            ) from exc
+
+        values = payload.get("value", [])
+
+        if not isinstance(values, list):
+            raise RuntimeError(
+                "Invalid OData response: "
+                "'value' is not a list."
+            )
+
+        if not values:
+            raise RuntimeError(
+                "Sentinel-2 product was not found in the "
+                "Copernicus OData catalogue: "
+                f"{name}"
+            )
+
+        product = values[0]
+
+        if not isinstance(product, dict):
+            raise RuntimeError(
+                "Invalid OData product record."
+            )
+
+        product_uuid = product.get("Id")
+
+        if not product_uuid:
+            raise RuntimeError(
+                "OData product record does not contain an Id."
+            )
+
+        return str(product_uuid)
+
+    def build_download_url(
+        self,
+        product_uuid: str,
+    ) -> str:
+        """Build the authenticated Copernicus download URL."""
+
+        uuid = product_uuid.strip()
+
+        if not uuid:
+            raise ValueError(
+                "Product UUID is required."
+            )
+
+        return (
+            f"{self.DOWNLOAD_BASE_URL}/"
+            f"Products({quote(uuid, safe='')})/"
+            "$value"
+        )
+
     def download(
         self,
         product: Any,
         destination: str | None = None,
     ) -> ConnectorResult:
-        """Download a Sentinel-2 product."""
+        """
+        Download a Sentinel-2 product.
 
-        product_id = self._extract_product_id(product)
+        A .part file is used while downloading.
 
-        if not product_id:
+        If a .part file already exists, the downloader attempts
+        to resume from the existing byte offset using HTTP Range.
+        """
+
+        product_name = self._extract_product_id(product)
+
+        if not product_name:
             return ConnectorResult.failure(
                 provider=self.provider_name,
                 operation="download",
-                error="Product ID is required",
+                error=(
+                    "Product ID or product name is required"
+                ),
             )
 
         if not destination:
@@ -133,22 +336,47 @@ class Sentinel2Downloader:
                 error="Destination is required",
             )
 
-        download_url = self._extract_download_url(product)
-
-        if not download_url:
-            return ConnectorResult.failure(
-                provider=self.provider_name,
-                operation="download",
-                error="Download URL is required",
-            )
-
         destination_path = Path(destination)
+        partial_path = Path(
+            f"{destination_path}.part"
+        )
 
         try:
             destination_path.parent.mkdir(
                 parents=True,
                 exist_ok=True,
             )
+
+            if destination_path.exists():
+                existing_size = (
+                    destination_path.stat().st_size
+                )
+
+                if existing_size > 0:
+                    return ConnectorResult.ok(
+                        provider=self.provider_name,
+                        operation="download",
+                        data={
+                            "product_id": product_name,
+                            "destination": str(
+                                destination_path
+                            ),
+                            "status": "already_downloaded",
+                        },
+                        metadata={
+                            "size_bytes": existing_size,
+                        },
+                    )
+
+            product_uuid = self.resolve_product_uuid(
+                product_name
+            )
+
+            download_url = self.build_download_url(
+                product_uuid
+            )
+
+            token = self.auth_manager.get_token()
 
             if self.transport is not None:
                 self.transport(
@@ -158,27 +386,49 @@ class Sentinel2Downloader:
                     self.user_agent,
                 )
             else:
-                self._download_http(
-                    url=download_url,
-                    destination=destination_path,
+                size_bytes = (
+                    self._download_authenticated_resumable(
+                        url=download_url,
+                        destination=destination_path,
+                        partial_path=partial_path,
+                        token=token,
+                    )
                 )
 
-            size_bytes = 0
+                if size_bytes <= 0:
+                    raise RuntimeError(
+                        "Download completed but the "
+                        "destination file is empty."
+                    )
 
-            if destination_path.exists():
-                size_bytes = destination_path.stat().st_size
+            if not destination_path.exists():
+                raise RuntimeError(
+                    "Download reported success but the "
+                    "destination file does not exist."
+                )
+
+            final_size = destination_path.stat().st_size
+
+            if final_size <= 0:
+                raise RuntimeError(
+                    "Downloaded file is empty."
+                )
 
             return ConnectorResult.ok(
                 provider=self.provider_name,
                 operation="download",
                 data={
-                    "product_id": product_id,
-                    "destination": str(destination_path),
+                    "product_id": product_name,
+                    "product_uuid": product_uuid,
+                    "destination": str(
+                        destination_path
+                    ),
                     "status": "downloaded",
                 },
                 metadata={
                     "url": download_url,
-                    "size_bytes": size_bytes,
+                    "size_bytes": final_size,
+                    "resumable": True,
                 },
             )
 
@@ -188,21 +438,238 @@ class Sentinel2Downloader:
                 operation="download",
                 error=str(exc),
                 metadata={
-                    "product_id": product_id,
-                    "destination": str(destination_path),
-                    "url": download_url,
+                    "product_id": product_name,
+                    "destination": str(
+                        destination_path
+                    ),
+                    "partial_destination": str(
+                        partial_path
+                    ),
                 },
+            )
+
+    def _download_authenticated_resumable(
+        self,
+        url: str,
+        destination: Path,
+        partial_path: Path,
+        token: str,
+    ) -> int:
+        """
+        Stream an authenticated download with resume support.
+        """
+
+        existing_size = 0
+
+        if partial_path.exists():
+            existing_size = partial_path.stat().st_size
+
+        last_error: Exception | None = None
+
+        for attempt in range(
+            1,
+            self.max_retries + 2,
+        ):
+            try:
+                headers = {
+                    "Authorization": (
+                        f"Bearer {token}"
+                    ),
+                    "Accept": (
+                        "application/octet-stream"
+                    ),
+                }
+
+                if existing_size > 0:
+                    headers["Range"] = (
+                        f"bytes={existing_size}-"
+                    )
+
+                response = self.session.get(
+                    url,
+                    headers=headers,
+                    timeout=self.timeout,
+                    stream=True,
+                    allow_redirects=True,
+                )
+
+                if (
+                    existing_size > 0
+                    and response.status_code == 200
+                ):
+                    response.close()
+
+                    existing_size = 0
+
+                    with partial_path.open(
+                        "wb"
+                    ):
+                        pass
+
+                    response = self.session.get(
+                        url,
+                        headers={
+                            "Authorization": (
+                                f"Bearer {token}"
+                            ),
+                            "Accept": (
+                                "application/octet-stream"
+                            ),
+                        },
+                        timeout=self.timeout,
+                        stream=True,
+                        allow_redirects=True,
+                    )
+
+                if not response.ok:
+                    error = RuntimeError(
+                        "Copernicus product download failed "
+                        f"(HTTP {response.status_code}). "
+                        f"{self._safe_error_detail(response)}"
+                    )
+
+                    response.close()
+                    raise error
+
+                content_length = response.headers.get(
+                    "Content-Length"
+                )
+
+                total_bytes: int | None = None
+
+                if content_length:
+                    try:
+                        response_length = int(
+                            content_length
+                        )
+
+                        total_bytes = (
+                            existing_size
+                            + response_length
+                        )
+                    except ValueError:
+                        total_bytes = None
+
+                mode = (
+                    "ab"
+                    if existing_size > 0
+                    and response.status_code == 206
+                    else "wb"
+                )
+
+                if mode == "wb":
+                    existing_size = 0
+
+                downloaded = existing_size
+
+                with response:
+                    with partial_path.open(
+                        mode
+                    ) as output_file:
+
+                        for chunk in response.iter_content(
+                            chunk_size=self.CHUNK_SIZE
+                        ):
+                            if not chunk:
+                                continue
+
+                            output_file.write(chunk)
+                            downloaded += len(chunk)
+
+                            self._report_progress(
+                                downloaded=downloaded,
+                                total=total_bytes,
+                            )
+
+                if downloaded <= 0:
+                    raise RuntimeError(
+                        "Copernicus returned an empty "
+                        "download."
+                    )
+
+                partial_path.replace(
+                    destination
+                )
+
+                return downloaded
+
+            except (
+                requests.RequestException,
+                OSError,
+                RuntimeError,
+            ) as exc:
+
+                last_error = exc
+
+                if attempt >= self.max_retries + 1:
+                    break
+
+                token = self.auth_manager.get_token()
+
+        if last_error is not None:
+            raise RuntimeError(
+                "Sentinel-2 download failed after "
+                f"{self.max_retries + 1} attempts: "
+                f"{last_error}"
+            ) from last_error
+
+        raise RuntimeError(
+            "Sentinel-2 download failed."
+        )
+
+    @staticmethod
+    def _report_progress(
+        downloaded: int,
+        total: int | None,
+    ) -> None:
+        """
+        Report download progress.
+
+        Uses PowerShell-friendly console output when a
+        total size is available.
+        """
+
+        downloaded_mb = downloaded / (
+            1024 * 1024
+        )
+
+        if total and total > 0:
+            total_mb = total / (
+                1024 * 1024
+            )
+
+            percentage = (
+                downloaded / total
+            ) * 100
+
+            print(
+                f"\rSentinel-2 download: "
+                f"{percentage:6.2f}% "
+                f"({downloaded_mb:,.1f} / "
+                f"{total_mb:,.1f} MB)",
+                end="",
+                flush=True,
+            )
+
+        else:
+            print(
+                f"\rSentinel-2 download: "
+                f"{downloaded_mb:,.1f} MB",
+                end="",
+                flush=True,
             )
 
     def is_available(
         self,
         product: Any,
     ) -> bool:
-        """Check whether a product can be downloaded."""
+        """
+        Return whether the supplied object contains a
+        usable Sentinel-2 product identifier.
+        """
 
         return bool(
             self._extract_product_id(product)
-            and self._extract_download_url(product)
         )
 
     def health_check(self) -> dict[str, Any]:
@@ -216,40 +683,27 @@ class Sentinel2Downloader:
             "transport_configured": (
                 self.transport is not None
             ),
+            "odata_base_url": (
+                self.ODATA_BASE_URL
+            ),
+            "download_base_url": (
+                self.DOWNLOAD_BASE_URL
+            ),
+            "resumable": True,
+            "chunk_size_bytes": self.CHUNK_SIZE,
+            "max_retries": self.max_retries,
         }
-
-    def _download_http(
-        self,
-        url: str,
-        destination: Path,
-    ) -> None:
-        """Download a product using HTTP."""
-
-        request = Request(
-            url,
-            headers={
-                "User-Agent": self.user_agent,
-            },
-        )
-
-        with urlopen(
-            request,
-            timeout=self.timeout,
-        ) as response:
-            with destination.open("wb") as output_file:
-                while True:
-                    chunk = response.read(1024 * 1024)
-
-                    if not chunk:
-                        break
-
-                    output_file.write(chunk)
 
     @staticmethod
     def _extract_product_id(
         product: Any,
     ) -> str | None:
-        """Extract a product ID."""
+        """
+        Extract the Sentinel-2 product name.
+
+        GeoShield Sentinel2Product stores the Copernicus
+        product name in product_id.
+        """
 
         if isinstance(product, str):
             value = product.strip()
@@ -259,12 +713,18 @@ class Sentinel2Downloader:
             value = product.get("product_id")
 
             if value is None:
+                value = product.get(
+                    "product_name"
+                )
+
+            if value is None:
                 value = product.get("id")
 
             if value is None:
                 return None
 
             value = str(value).strip()
+
             return value or None
 
         value = getattr(
@@ -272,6 +732,13 @@ class Sentinel2Downloader:
             "product_id",
             None,
         )
+
+        if value is None:
+            value = getattr(
+                product,
+                "product_name",
+                None,
+            )
 
         if value is None:
             value = getattr(
@@ -284,41 +751,49 @@ class Sentinel2Downloader:
             return None
 
         value = str(value).strip()
+
         return value or None
 
     @staticmethod
-    def _extract_download_url(
-        product: Any,
-    ) -> str | None:
-        """Extract a download URL."""
+    def _safe_error_detail(
+        response: requests.Response,
+    ) -> str:
+        """
+        Extract a useful provider error without exposing
+        credentials or access tokens.
+        """
 
-        if isinstance(product, dict):
-            value = product.get("download_url")
+        try:
+            data = response.json()
+        except ValueError:
+            text = response.text.strip()
 
-            if value is None:
-                value = product.get("url")
+            if not text:
+                return (
+                    "No additional error information "
+                    "was returned."
+                )
 
-            if value is None:
-                return None
+            return text[:500]
 
-            value = str(value).strip()
-            return value or None
-
-        value = getattr(
-            product,
-            "download_url",
-            None,
-        )
-
-        if value is None:
-            value = getattr(
-                product,
-                "url",
-                None,
+        if isinstance(data, dict):
+            detail = (
+                data.get("detail")
+                or data.get("title")
+                or data.get("message")
+                or data.get("error_description")
+                or data.get("error")
             )
 
-        if value is None:
-            return None
+            if detail:
+                return str(detail)[:500]
 
-        value = str(value).strip()
-        return value or None
+        text = response.text.strip()
+
+        if text:
+            return text[:500]
+
+        return (
+            "No additional error information "
+            "was provided."
+        )

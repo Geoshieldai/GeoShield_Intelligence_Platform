@@ -1,4 +1,4 @@
-"""
+﻿"""
 GeoShield Sentinel-2 Catalog
 
 Provides catalog-result normalization for Sentinel-2 products.
@@ -9,6 +9,7 @@ provider responses into a consistent GeoShield representation.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from .sentinel2_product import Sentinel2Product
@@ -16,6 +17,47 @@ from .sentinel2_product import Sentinel2Product
 
 class Sentinel2Catalog:
     """Normalize Sentinel-2 catalog records."""
+
+    @staticmethod
+    def _extract_tile_id(
+        record: dict[str, Any],
+        product_id: str,
+    ) -> str | None:
+        """
+        Resolve the Sentinel-2 MGRS tile identifier.
+
+        Preference order:
+            1. Explicit tile_id from the normalized record.
+            2. Common provider tile fields.
+            3. MGRS tile extracted from the Sentinel-2 product ID.
+
+        Sentinel-2 product identifiers contain the tile in the form:
+
+            ..._T37MBU_...
+
+        Returns:
+            MGRS tile identifier such as T37MBU, or None.
+        """
+
+        tile_id = (
+            record.get("tile_id")
+            or record.get("tileId")
+            or record.get("mgrs_tile")
+            or record.get("mgrsTile")
+        )
+
+        if tile_id:
+            return str(tile_id)
+
+        match = re.search(
+            r"(?:^|_)T\d{2}[A-Z]{3}(?:_|$)",
+            product_id,
+        )
+
+        if match:
+            return match.group(0).strip("_")
+
+        return None
 
     def normalize_product(
         self,
@@ -25,13 +67,15 @@ class Sentinel2Catalog:
         Convert a provider catalog record into a Sentinel2Product.
 
         Args:
-            record: Raw Sentinel-2 catalog record.
+            record:
+                Raw Sentinel-2 catalog record.
 
         Returns:
             A normalized Sentinel2Product object.
 
         Raises:
-            ValueError: If the record does not contain a product ID.
+            ValueError:
+                If the record does not contain a product ID.
         """
 
         product_id = (
@@ -44,6 +88,8 @@ class Sentinel2Catalog:
             raise ValueError(
                 "Sentinel-2 product ID is required."
             )
+
+        product_id = str(product_id)
 
         acquisition_date = (
             record.get("acquisition_date")
@@ -63,24 +109,25 @@ class Sentinel2Catalog:
         if cloud_cover is None:
             cloud_cover = record.get("cloudCover")
 
-        tile_id = (
-            record.get("tile_id")
-            or record.get("tileId")
+        tile_id = self._extract_tile_id(
+            record=record,
+            product_id=product_id,
         )
 
         product_name = (
             record.get("product_name")
             or record.get("productName")
             or record.get("name")
+            or product_id
         )
 
         return Sentinel2Product(
-            product_id=str(product_id),
+            product_id=product_id,
             acquisition_date=str(acquisition_date),
             processing_level=str(processing_level),
             cloud_cover=cloud_cover,
             tile_id=tile_id,
-            product_name=product_name,
+            product_name=str(product_name),
             metadata=dict(record),
         )
 
@@ -92,7 +139,8 @@ class Sentinel2Catalog:
         Normalize multiple catalog records.
 
         Args:
-            records: A list of raw Sentinel-2 catalog records.
+            records:
+                A list of raw Sentinel-2 catalog records.
 
         Returns:
             A list of normalized Sentinel2Product objects.

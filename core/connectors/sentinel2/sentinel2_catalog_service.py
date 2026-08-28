@@ -24,7 +24,7 @@ from wsgiref import headers
 
 import requests
 
-from .sentinel2_auth import Sentinel2Auth
+from .sentinel2_auth_adapter import Sentinel2AuthAdapter
 from .sentinel2_catalog import Sentinel2Catalog
 from .sentinel2_http import Sentinel2HTTP
 from .sentinel2_product import Sentinel2Product
@@ -45,7 +45,7 @@ class Sentinel2CatalogService:
         self,
         timeout: float = 30.0,
         catalog: Sentinel2Catalog | None = None,
-        auth: Sentinel2Auth | None = None,
+        auth: Sentinel2AuthAdapter | None = None,
         http: Sentinel2HTTP | None = None,
     ) -> None:
         """
@@ -67,7 +67,7 @@ class Sentinel2CatalogService:
 
         self.timeout = timeout
         self.catalog = catalog or Sentinel2Catalog()
-        self.auth = auth or Sentinel2Auth()
+        self.auth = auth or Sentinel2AuthAdapter()
         self.http = http or Sentinel2HTTP(
             timeout=int(timeout)
         )
@@ -217,45 +217,65 @@ class Sentinel2CatalogService:
 
     def _get_access_token(self) -> str:
         """
-        Obtain an OAuth access token using the existing
-        Sentinel2Auth and Sentinel2HTTP layers.
+        Obtain a valid Copernicus access token.
 
-        Reuses a valid cached token when available.
+        Supports the central authentication adapter and the
+        legacy Sentinel2Auth object used by unit tests.
         """
 
-        if self.auth.token_is_valid:
-            if self.auth.token:
-                return self.auth.token
-
-        if not self.auth.is_configured:
-            raise RuntimeError(
-                "Copernicus credentials are not configured."
-            )
-
         try:
-            token_data = self.http.request_token(
-                client_id=self.auth.client_id or "",
-                client_secret=self.auth.client_secret or "",
+            get_token = getattr(self.auth, "get_token", None)
+
+            if callable(get_token):
+                return get_token()
+
+            if getattr(self.auth, "token_is_valid", False):
+                token = getattr(self.auth, "token", None)
+                if token:
+                    return token
+
+            client_id = getattr(self.auth, "client_id", None)
+            client_secret = getattr(
+                self.auth,
+                "client_secret",
+                None,
             )
-        except (ValueError, RuntimeError) as exc:
+
+            if not client_id or not client_secret:
+                raise RuntimeError(
+                    "Copernicus authentication credentials are unavailable."
+                )
+
+            token_data = self.http.request_token(
+                client_id=client_id,
+                client_secret=client_secret,
+            )
+
+            access_token = token_data.get("access_token")
+
+            if not isinstance(access_token, str) or not access_token:
+                raise RuntimeError(
+                    "Copernicus authentication response did not contain "
+                    "a valid access token."
+                )
+
+            set_token = getattr(self.auth, "set_token", None)
+
+            if callable(set_token):
+                set_token(
+                    access_token,
+                    token_data.get("expires_in"),
+                )
+
+            return access_token
+
+        except RuntimeError:
+            raise
+
+        except Exception as exc:
             raise RuntimeError(
                 "Unable to authenticate with Copernicus Data Space."
             ) from exc
-
-        access_token = token_data.get("access_token")
-
-        if not isinstance(access_token, str):
-            raise RuntimeError(
-                "Copernicus authentication response did not "
-                "contain a valid access token."
-            )
-
-        self.auth.set_token(
-            token=access_token,
-            expires_in=token_data.get("expires_in"),
-        )
-
-        return access_token
 
     def _catalog_item_to_record(
         self,

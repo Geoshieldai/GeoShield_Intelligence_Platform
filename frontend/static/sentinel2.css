@@ -1,0 +1,467 @@
+﻿/*
+============================================================
+ GeoShield AI Enterprise
+ Sentinel-2 Frontend Styles
+============================================================
+*/
+
+.sentinel2-product {
+
+    margin: 20px;
+
+    padding: 22px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(10, 25, 35, 0.97),
+            rgba(5, 15, 22, 0.97)
+        );
+
+    border:
+        1px solid rgba(0, 255, 220, 0.25);
+
+    border-radius: 14px;
+
+    color: #eafcff;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.25);
+
+}
+
+.sentinel2-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 20px;
+
+    margin-bottom: 20px;
+
+}
+
+.sentinel2-eyebrow {
+
+    font-size: 11px;
+
+    letter-spacing: 2px;
+
+    color: #5fffe1;
+
+    font-weight: 700;
+
+}
+
+.sentinel2-header h2 {
+
+    margin:
+        5px 0 5px 0;
+
+    font-size: 24px;
+
+}
+
+.sentinel2-header p {
+
+    margin: 0;
+
+    color: #8faab4;
+
+}
+
+.sentinel2-status {
+
+    padding:
+        7px 12px;
+
+    border-radius: 20px;
+
+    border:
+        1px solid #2e5963;
+
+    color: #9fb6bd;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+}
+
+.sentinel2-status.success {
+
+    color: #62ffbd;
+
+    border-color: #1c9b70;
+
+}
+
+.sentinel2-status.loading {
+
+    color: #ffe27a;
+
+    border-color: #9b7b1c;
+
+}
+
+.sentinel2-status.error {
+
+    color: #ff7373;
+
+    border-color: #9b3030;
+
+}
+
+.sentinel2-controls {
+
+    display: flex;
+
+    align-items: flex-end;
+
+    gap: 12px;
+
+    flex-wrap: wrap;
+
+    padding:
+        15px;
+
+    background:
+        rgba(255, 255, 255, 0.035);
+
+    border-radius: 10px;
+
+}
+
+.sentinel2-field {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 6px;
+
+}
+
+.sentinel2-field label {
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+    color: #7f9ca5;
+
+}
+
+.sentinel2-field input {
+
+    min-width: 145px;
+
+    padding:
+        9px 10px;
+
+    border:
+        1px solid #29454d;
+
+    border-radius: 7px;
+
+    background: #08161d;
+
+    color: #eaffff;
+
+    outline: none;
+
+}
+
+.sentinel2-field input:focus {
+
+    border-color: #36e6ca;
+
+}
+
+.sentinel2-button {
+
+    padding:
+        10px 14px;
+
+    border:
+        1px solid #31525a;
+
+    border-radius: 7px;
+
+    background: #0c2028;
+
+    color: #dffcff;
+
+    cursor: pointer;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    letter-spacing: .5px;
+
+}
+
+.sentinel2-button:hover {
+
+    border-color: #38e7ca;
+
+    transform: translateY(-1px);
+
+}
+
+.sentinel2-button.primary {
+
+    background:
+        linear-gradient(
+            135deg,
+            #0c766b,
+            #12a88e
+        );
+
+    border-color: #36e6ca;
+
+    color: white;
+
+}
+
+.sentinel2-message {
+
+    margin:
+        15px 0;
+
+    padding:
+        10px 12px;
+
+    border-left:
+        3px solid #28d8bf;
+
+    background:
+        rgba(40, 216, 191, 0.05);
+
+    color: #9ebbc3;
+
+    font-size: 13px;
+
+}
+
+.sentinel2-results {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(290px, 1fr)
+        );
+
+    gap: 12px;
+
+}
+
+.sentinel2-card {
+
+    padding:
+        15px;
+
+    background:
+        rgba(255, 255, 255, 0.035);
+
+    border:
+        1px solid #203c44;
+
+    border-radius: 10px;
+
+    transition:
+        border-color .2s,
+        transform .2s;
+
+}
+
+.sentinel2-card:hover {
+
+    border-color: #2fb9a8;
+
+    transform: translateY(-2px);
+
+}
+
+.sentinel2-card.selected {
+
+    border-color: #48ffe0;
+
+    box-shadow:
+        0 0 0 1px rgba(72, 255, 224, .2);
+
+}
+
+.sentinel2-card-top {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+}
+
+.sentinel2-platform {
+
+    color: #55e8d2;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+}
+
+.sentinel2-card h3 {
+
+    margin:
+        5px 0 0;
+
+    font-size: 13px;
+
+    word-break: break-word;
+
+}
+
+.sentinel2-cloud {
+
+    min-width: 45px;
+
+    height: 45px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        rgba(74, 197, 179, .1);
+
+    color: #6fffe6;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+}
+
+.sentinel2-meta {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 10px;
+
+    margin:
+        15px 0;
+
+}
+
+.sentinel2-meta span {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+
+    color: #718c95;
+
+    font-size: 9px;
+
+    letter-spacing: 1px;
+
+}
+
+.sentinel2-meta strong {
+
+    color: #d8f2f5;
+
+    font-size: 11px;
+
+    letter-spacing: 0;
+
+}
+
+.sentinel2-actions {
+
+    display: flex;
+
+    gap: 8px;
+
+}
+
+.sentinel2-actions .sentinel2-button {
+
+    flex: 1;
+
+}
+
+.sentinel2-empty {
+
+    padding:
+        30px;
+
+    text-align: center;
+
+    border:
+        1px dashed #31515a;
+
+    border-radius: 10px;
+
+    color: #78949d;
+
+}
+
+.sentinel2-empty strong {
+
+    display: block;
+
+    color: #b7d0d6;
+
+    margin-bottom: 6px;
+
+}
+
+@media (max-width: 800px) {
+
+    .sentinel2-header {
+
+        flex-direction: column;
+
+    }
+
+    .sentinel2-controls {
+
+        align-items: stretch;
+
+        flex-direction: column;
+
+    }
+
+    .sentinel2-field input {
+
+        width: 100%;
+
+        box-sizing: border-box;
+
+    }
+
+}
