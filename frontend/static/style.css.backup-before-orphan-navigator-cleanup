@@ -1,0 +1,536 @@
+﻿
+
+/* ------------------------------------------------------------
+   NAVIGATION BUTTONS
+   ------------------------------------------------------------ */
+
+
+
+
+.satellite-horizontal-nav-button:hover:not(:disabled) {
+
+    transform: scale(1.06);
+
+    background: rgba(
+        255,
+        255,
+        255,
+        0.12
+    ) !important;
+
+}
+
+
+.satellite-horizontal-nav-button:active:not(:disabled) {
+
+    transform: scale(0.96);
+
+}
+
+
+.satellite-horizontal-nav-button:disabled {
+
+    opacity: 0.28 !important;
+
+    cursor: default !important;
+
+}
+
+
+/* ------------------------------------------------------------
+   NAVIGATOR LINE
+   ------------------------------------------------------------ */
+
+
+
+
+/* Main line */
+
+
+
+
+/* Center indicator */
+
+
+
+
+/* ------------------------------------------------------------
+   ACTIVE SENTINEL PRODUCT
+   ------------------------------------------------------------ */
+
+#sentinel2Product.satellite-product-active {
+
+    outline: 2px solid rgba(
+        255,
+        255,
+        255,
+        0.18
+    ) !important;
+
+    outline-offset: 6px !important;
+
+}
+
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 900px) {
+
+    #satelliteGridViewport
+    .satellite-card {
+
+        flex-basis: 320px !important;
+
+        width: 320px !important;
+
+        max-width: 320px !important;
+
+        min-width: 320px !important;
+
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    #satelliteGridViewport
+    .satellite-card {
+
+        flex-basis: 280px !important;
+
+        width: 280px !important;
+
+        max-width: 280px !important;
+
+        min-width: 280px !important;
+
+    }
+
+
+    
+
+
+    
+
+
+    
+
+}
+
+
+/* ============================================================
+
+/* ============================================================
+   GEOSHIELD GLOBAL SATELLITE INTELLIGENCE CANVAS
+   ============================================================ */
+
+#satelliteIntelligenceViewport {
+
+    width: 100% !important;
+
+    max-width: 100% !important;
+
+    overflow-x: auto !important;
+
+    overflow-y: hidden !important;
+
+    position: relative !important;
+
+    box-sizing: border-box !important;
+
+    scrollbar-width: none;
+
+    overscroll-behavior-x: contain;
+
+}
+
+
+#satelliteIntelligenceViewport::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+#satelliteIntelligenceCanvas {
+
+    width: max-content !important;
+
+    min-width: 100% !important;
+
+    max-width: none !important;
+
+    display: flex !important;
+
+    flex-direction: column !important;
+
+    align-items: stretch !important;
+
+    box-sizing: border-box !important;
+
+}
+
+
+/* ============================================================
+   SATELLITE CENTER
+   ============================================================ */
+
+#satelliteCenter {
+
+    width: 1400px !important;
+
+    max-width: none !important;
+
+    flex: 0 0 1400px !important;
+
+    box-sizing: border-box !important;
+
+}
+
+
+/* ============================================================
+   SATELLITE CARD VIEWPORT
+   ============================================================ */
+
+#satelliteGridViewport {
+
+    width: 100% !important;
+
+    max-width: none !important;
+
+    overflow: hidden !important;
+
+    box-sizing: border-box !important;
+
+}
+
+
+#satelliteGridViewport .satellite-grid {
+
+    width: max-content !important;
+
+    max-width: none !important;
+
+    display: flex !important;
+
+    flex-direction: row !important;
+
+    flex-wrap: nowrap !important;
+
+    gap: 24px !important;
+
+    transform: none !important;
+
+}
+
+
+/*
+    The global navigator moves the complete canvas.
+
+    Therefore satellite cards themselves must NOT be
+    translated independently.
+*/
+
+#satelliteGridViewport .satellite-card {
+
+    transform: none !important;
+
+}
+
+
+/* ============================================================
+   PRODUCT AREA
+   ============================================================ */
+
+#satelliteProductArea {
+
+    width: 1400px !important;
+
+    max-width: none !important;
+
+    flex: 0 0 1400px !important;
+
+    box-sizing: border-box !important;
+
+}
+
+
+#satelliteProductArea .sentinel2-product {
+
+    width: 100% !important;
+
+    max-width: none !important;
+
+    box-sizing: border-box !important;
+
+}
+
+
+/* ============================================================
+   GLOBAL BOTTOM NAVIGATOR
+   ============================================================ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 600px) {
+
+    #satelliteCenter {
+
+        width: 1100px !important;
+
+        flex-basis: 1100px !important;
+
+    }
+
+
+    #satelliteProductArea {
+
+        width: 1100px !important;
+
+        flex-basis: 1100px !important;
+
+    }
+
+
+    
+
+
+    
+
+}
+
+
+/* ============================================================
+   END GLOBAL SATELLITE INTELLIGENCE CANVAS
+   ============================================================ */
+
+
+/* ============================================================
+   GEOSHIELD GLOBAL SATELLITE INTELLIGENCE CANVAS
+   ============================================================ */
+
+#satelliteIntelligenceViewport {
+
+    width: 100% !important;
+
+    max-width: 100% !important;
+
+    overflow-x: auto !important;
+
+    overflow-y: hidden !important;
+
+    position: relative !important;
+
+    box-sizing: border-box !important;
+
+    scrollbar-width: none;
+
+    overscroll-behavior-x: contain;
+
+}
+
+
+#satelliteIntelligenceViewport::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+#satelliteIntelligenceCanvas {
+
+    width: max-content !important;
+
+    min-width: 100% !important;
+
+    max-width: none !important;
+
+    display: flex !important;
+
+    flex-direction: column !important;
+
+    align-items: stretch !important;
+
+    box-sizing: border-box !important;
+
+}
+
+
+/* ============================================================
+   SATELLITE CENTER
+   ============================================================ */
+
+#satelliteCenter {
+
+    width: 1400px !important;
+
+    max-width: none !important;
+
+    flex: 0 0 1400px !important;
+
+    box-sizing: border-box !important;
+
+}
+
+
+/* ============================================================
+   SATELLITE CARD VIEWPORT
+   ============================================================ */
+
+#satelliteGridViewport {
+
+    width: 100% !important;
+
+    max-width: none !important;
+
+    overflow: hidden !important;
+
+    box-sizing: border-box !important;
+
+}
+
+
+#satelliteGridViewport .satellite-grid {
+
+    width: max-content !important;
+
+    max-width: none !important;
+
+    display: flex !important;
+
+    flex-direction: row !important;
+
+    flex-wrap: nowrap !important;
+
+    gap: 24px !important;
+
+    transform: none !important;
+
+}
+
+
+/*
+    The global navigator moves the complete canvas.
+
+    Therefore satellite cards themselves must NOT be
+    translated independently.
+*/
+
+#satelliteGridViewport .satellite-card {
+
+    transform: none !important;
+
+}
+
+
+/* ============================================================
+   PRODUCT AREA
+   ============================================================ */
+
+#satelliteProductArea {
+
+    width: 1400px !important;
+
+    max-width: none !important;
+
+    flex: 0 0 1400px !important;
+
+    box-sizing: border-box !important;
+
+}
+
+
+#satelliteProductArea .sentinel2-product {
+
+    width: 100% !important;
+
+    max-width: none !important;
+
+    box-sizing: border-box !important;
+
+}
+
+
+/* ============================================================
+   GLOBAL BOTTOM NAVIGATOR
+   ============================================================ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 600px) {
+
+    #satelliteCenter {
+
+        width: 1100px !important;
+
+        flex-basis: 1100px !important;
+
+    }
+
+
+    #satelliteProductArea {
+
+        width: 1100px !important;
+
+        flex-basis: 1100px !important;
+
+    }
+
+
+    
+
+
+    
+
+}
+
+
+/* ============================================================
+   END GLOBAL SATELLITE INTELLIGENCE CANVAS
+   ============================================================ */
+
+
+

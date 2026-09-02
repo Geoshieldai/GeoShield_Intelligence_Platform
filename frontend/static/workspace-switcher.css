@@ -1,0 +1,128 @@
+﻿/* ============================================================
+   GEOSHIELD WORKSPACE SWITCHER
+   Secondary Map <-> Satellite Intelligence control
+   Existing workspace navigator is NOT modified.
+   ============================================================ */
+
+#workspaceSwitcher {
+    position: fixed;
+
+    right: 64px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    z-index: 2147483646;
+
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    border-radius: 50%;
+
+    background: rgba(31, 31, 31, 0.94);
+
+    border: 1px solid rgba(255, 255, 255, 0.10);
+
+    box-shadow:
+        0 5px 18px rgba(0, 0, 0, 0.30);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    pointer-events: auto;
+    user-select: none;
+}
+
+#workspaceSwitcherButton {
+    width: 30px;
+    height: 30px;
+
+    margin: 0;
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #d1d5db;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 20px;
+    font-weight: 700;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        transform 0.12s ease;
+}
+
+#workspaceSwitcherButton:hover {
+    background: rgba(255, 255, 255, 0.10);
+    color: #ffffff;
+    transform: scale(1.08);
+}
+
+#workspaceSwitcherButton:active {
+    transform: scale(0.92);
+}
+
+#workspaceSwitcherButton span {
+    display: block;
+    line-height: 1;
+}
+
+#workspaceSwitcherButton:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.45);
+    outline-offset: 2px;
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 700px) {
+    #workspaceSwitcher {
+        right: 50px;
+        width: 33px;
+        height: 33px;
+    }
+
+    #workspaceSwitcherButton {
+        width: 27px;
+        height: 27px;
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 450px) {
+    #workspaceSwitcher {
+        right: 43px;
+        width: 31px;
+        height: 31px;
+    }
+
+    #workspaceSwitcherButton {
+        width: 25px;
+        height: 25px;
+        font-size: 17px;
+    }
+}

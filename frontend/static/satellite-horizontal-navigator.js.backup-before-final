@@ -1,0 +1,388 @@
+﻿(function () {
+
+    "use strict";
+
+    /*
+    ============================================================
+    GeoShield AI Enterprise
+    Satellite Intelligence Horizontal Navigator
+    ============================================================
+
+    PURPOSE:
+
+        Controls ONLY the horizontal movement of the
+        Satellite Intelligence card viewport.
+
+    IMPORTANT:
+
+        - Does NOT change page scroll position.
+        - Does NOT change workspace.
+        - Does NOT use scrollIntoView().
+        - Does NOT use IntersectionObserver.
+        - Does NOT use window.scrollTo().
+        - Does NOT navigate to anchors.
+        - Does NOT create a second workspace navigator.
+
+    ============================================================
+    */
+
+    const VIEWPORT_ID =
+        "satelliteGridViewport";
+
+    const LEFT_BUTTON_ID =
+        "satelliteNavLeft";
+
+    const RIGHT_BUTTON_ID =
+        "satelliteNavRight";
+
+
+    let initialized = false;
+
+
+    /*
+    ============================================================
+    GET ELEMENTS
+    ============================================================
+    */
+
+    function getElements() {
+
+        return {
+
+            viewport:
+                document.getElementById(
+                    VIEWPORT_ID
+                ),
+
+            leftButton:
+                document.getElementById(
+                    LEFT_BUTTON_ID
+                ),
+
+            rightButton:
+                document.getElementById(
+                    RIGHT_BUTTON_ID
+                )
+
+        };
+
+    }
+
+
+    /*
+    ============================================================
+    UPDATE BUTTON STATE
+    ============================================================
+    */
+
+    function updateButtons() {
+
+        const elements =
+            getElements();
+
+
+        const viewport =
+            elements.viewport;
+
+
+        if (!viewport) {
+
+            return;
+
+        }
+
+
+        if (elements.leftButton) {
+
+            elements.leftButton.disabled =
+                viewport.scrollLeft <= 2;
+
+        }
+
+
+        if (elements.rightButton) {
+
+            const maxScroll =
+                viewport.scrollWidth -
+                viewport.clientWidth;
+
+
+            elements.rightButton.disabled =
+                viewport.scrollLeft >=
+                maxScroll - 2;
+
+        }
+
+    }
+
+
+    /*
+    ============================================================
+    HORIZONTAL MOVEMENT
+    ============================================================
+    */
+
+    function moveLeft() {
+
+        const elements =
+            getElements();
+
+
+        const viewport =
+            elements.viewport;
+
+
+        if (!viewport) {
+
+            return;
+
+        }
+
+
+        viewport.scrollLeft =
+            Math.max(
+                0,
+                viewport.scrollLeft -
+                Math.max(
+                    viewport.clientWidth * 0.75,
+                    280
+                )
+            );
+
+
+        updateButtons();
+
+    }
+
+
+    function moveRight() {
+
+        const elements =
+            getElements();
+
+
+        const viewport =
+            elements.viewport;
+
+
+        if (!viewport) {
+
+            return;
+
+        }
+
+
+        const amount =
+            Math.max(
+                viewport.clientWidth * 0.75,
+                280
+            );
+
+
+        const maximum =
+            viewport.scrollWidth -
+            viewport.clientWidth;
+
+
+        viewport.scrollLeft =
+            Math.min(
+                maximum,
+                viewport.scrollLeft + amount
+            );
+
+
+        updateButtons();
+
+    }
+
+
+    /*
+    ============================================================
+    BIND EVENTS
+    ============================================================
+    */
+
+    function bindEvents() {
+
+        const elements =
+            getElements();
+
+
+        if (
+            !elements.viewport ||
+            !elements.leftButton ||
+            !elements.rightButton
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            elements.viewport.dataset
+                .geoshieldHorizontalNavBound === "true"
+        ) {
+
+            return true;
+
+        }
+
+
+        elements.viewport.dataset
+            .geoshieldHorizontalNavBound =
+            "true";
+
+
+        elements.leftButton.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                moveLeft();
+
+            }
+        );
+
+
+        elements.rightButton.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                moveRight();
+
+            }
+        );
+
+
+        elements.viewport.addEventListener(
+            "scroll",
+            function () {
+
+                updateButtons();
+
+            },
+            {
+                passive: true
+            }
+        );
+
+
+        window.addEventListener(
+            "resize",
+            function () {
+
+                updateButtons();
+
+            },
+            {
+                passive: true
+            }
+        );
+
+
+        return true;
+
+    }
+
+
+    /*
+    ============================================================
+    INITIALIZATION
+    ============================================================
+    */
+
+    function initialize() {
+
+        if (initialized) {
+
+            updateButtons();
+
+            return;
+
+        }
+
+
+        if (!bindEvents()) {
+
+            /*
+            The satellite grid may be rendered asynchronously.
+            Retry without affecting page scrolling.
+            */
+
+            window.setTimeout(
+                initialize,
+                250
+            );
+
+            return;
+
+        }
+
+
+        initialized = true;
+
+
+        updateButtons();
+
+
+        console.log(
+            "GeoShield Satellite Horizontal Navigator: READY"
+        );
+
+    }
+
+
+    /*
+    ============================================================
+    PUBLIC API
+    ============================================================
+    */
+
+    window.GeoShieldSatelliteNavigator = {
+
+        initialize:
+            initialize,
+
+        left:
+            moveLeft,
+
+        right:
+            moveRight,
+
+        refresh:
+            updateButtons
+
+    };
+
+
+    /*
+    ============================================================
+    START
+    ============================================================
+    */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            {
+                once: true
+            }
+        );
+
+    }
+    else {
+
+        initialize();
+
+    }
+
+})();

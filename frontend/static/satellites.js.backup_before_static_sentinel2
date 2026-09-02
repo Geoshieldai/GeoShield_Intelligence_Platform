@@ -1,0 +1,415 @@
+﻿/*
+============================================================
+ GeoShield Satellite Intelligence Center
+ Reusable Satellite Registry Connector
+============================================================
+*/
+
+(function () {
+
+    "use strict";
+
+    const API_URL = "/satellites";
+
+    const ICONS = {
+        sentinel2: "\uD83D\uDEF0\uFE0F",
+        sentinel1: "\uD83D\uDCE1",
+        viirs: "\uD83D\uDD25",
+        gpm: "\uD83C\uDF27\uFE0F",
+        era5: "\uD83C\uDF0D"
+    };
+
+
+    function escapeHtml(value) {
+
+        if (
+            value === null ||
+            value === undefined
+        ) {
+            return "";
+        }
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
+    function createCapabilityList(capabilities) {
+
+        if (!Array.isArray(capabilities)) {
+            return "";
+        }
+
+        return capabilities
+            .map(function (capability) {
+
+                return `
+                    <span class="satellite-capability">
+                        ${escapeHtml(capability)}
+                    </span>
+                `;
+
+            })
+            .join("");
+    }
+
+
+    function createSatelliteCard(satellite) {
+
+        const id =
+            escapeHtml(satellite.id);
+
+        const name =
+            escapeHtml(satellite.name);
+
+        const provider =
+            escapeHtml(satellite.provider);
+
+        const category =
+            escapeHtml(satellite.category);
+
+        const description =
+            escapeHtml(satellite.description);
+
+        const status =
+            satellite.status === "active"
+                ? "active"
+                : "planned";
+
+        const icon =
+            ICONS[satellite.id] ||
+            "\uD83D\uDEF0\uFE0F";
+
+
+        let button = "";
+
+
+        if (status === "active") {
+
+            button = `
+                <button
+                    type="button"
+                    class="satellite-open-btn"
+                    data-satellite-id="${id}">
+                    Open Satellite
+                </button>
+            `;
+
+        }
+        else {
+
+            button = `
+                <button
+                    type="button"
+                    class="satellite-open-btn planned"
+                    disabled>
+                    Coming Soon
+                </button>
+            `;
+        }
+
+
+        return `
+            <article
+                class="satellite-card ${status}"
+                data-satellite="${id}">
+
+                <div class="satellite-card-header">
+
+                    <div>
+
+                        <div class="satellite-icon">
+                            ${icon}
+                        </div>
+
+                        <h3 class="satellite-name">
+                            ${name}
+                        </h3>
+
+                        <div class="satellite-provider">
+                            ${provider}
+                        </div>
+
+                    </div>
+
+                    <span class="satellite-status ${status}">
+                        ${escapeHtml(satellite.status)}
+                    </span>
+
+                </div>
+
+
+                <div class="satellite-category">
+                    ${category}
+                </div>
+
+
+                <div class="satellite-description">
+                    ${description}
+                </div>
+
+
+                <div class="satellite-capabilities">
+                    ${createCapabilityList(
+                        satellite.capabilities
+                    )}
+                </div>
+
+
+                ${button}
+
+            </article>
+        `;
+    }
+
+
+    function renderSatellites(payload) {
+
+        const grid =
+            document.getElementById(
+                "satelliteGrid"
+            );
+
+        const systemStatus =
+            document.getElementById(
+                "satelliteSystemStatus"
+            );
+
+
+        if (!grid) {
+
+            console.warn(
+                "GeoShield: satelliteGrid not found."
+            );
+
+            return;
+        }
+
+
+        if (
+            !payload ||
+            !Array.isArray(
+                payload.satellites
+            )
+        ) {
+
+            grid.innerHTML = `
+                <div class="satellite-error">
+                    Satellite registry returned
+                    invalid data.
+                </div>
+            `;
+
+            return;
+        }
+
+
+        grid.innerHTML =
+            payload.satellites
+                .map(createSatelliteCard)
+                .join("");
+
+
+        const satellites =
+            payload.satellites;
+
+
+        const total =
+            satellites.length;
+
+
+        const active =
+            satellites.filter(
+                function (satellite) {
+                    return satellite.status === "active";
+                }
+            ).length;
+
+
+        if (systemStatus) {
+
+            systemStatus.textContent =
+                `${active} active / ${total} registered`;
+        }
+
+
+        bindSatelliteButtons();
+    }
+
+
+    function bindSatelliteButtons() {
+
+        const buttons =
+            document.querySelectorAll(
+                ".satellite-open-btn[data-satellite-id]"
+            );
+
+
+        buttons.forEach(function (button) {
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    const id =
+                        this.dataset.satelliteId;
+
+                    openSatellite(id);
+                }
+            );
+
+        });
+    }
+
+
+    function openSatellite(id) {
+
+        console.log(
+            "GeoShield satellite selected:",
+            id
+        );
+
+
+        if (id === "sentinel2") {
+
+            const section =
+                document.getElementById(
+                    "sentinel2Product"
+                );
+
+
+            if (section) {
+
+                section.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+
+                return;
+            }
+        }
+
+
+        console.log(
+            "Satellite interface not yet activated:",
+            id
+        );
+    }
+
+
+    async function loadSatellites() {
+
+        const grid =
+            document.getElementById(
+                "satelliteGrid"
+            );
+
+
+        if (!grid) {
+            return;
+        }
+
+
+        try {
+
+            grid.innerHTML = `
+                <div class="satellite-loading">
+                    Connecting to satellite registry...
+                </div>
+            `;
+
+
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+                        method: "GET",
+                        headers: {
+                            "Accept":
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `Satellite API HTTP ${response.status}`
+                );
+            }
+
+
+            const payload =
+                await response.json();
+
+
+            renderSatellites(payload);
+
+
+            console.log(
+                "GeoShield satellite registry loaded.",
+                payload
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "GeoShield satellite registry failed:",
+                error
+            );
+
+
+            grid.innerHTML = `
+                <div class="satellite-error">
+                    Unable to connect to the
+                    satellite registry.
+                </div>
+            `;
+
+
+            const systemStatus =
+                document.getElementById(
+                    "satelliteSystemStatus"
+                );
+
+
+            if (systemStatus) {
+
+                systemStatus.textContent =
+                    "Connection error";
+            }
+        }
+    }
+
+
+    function initializeSatellites() {
+
+        loadSatellites();
+    }
+
+
+    window.GeoShieldSatellites = {
+
+        initialize:
+            initializeSatellites,
+
+        reload:
+            loadSatellites,
+
+        open:
+            openSatellite
+    };
+
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        initializeSatellites
+    );
+
+})();

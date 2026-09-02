@@ -1,20 +1,29 @@
-import asyncio
+"""
+Live Planet Data API item test.
+"""
 
-from planet import Session, Auth
+import pytest
+from planet import Auth, Session
 from planet.clients import DataClient
 
 from backend.satellite.auth import get_planet_key
 
 
-async def main():
+@pytest.mark.live
+@pytest.mark.asyncio
+async def test_planet_item_lookup():
+    """
+    Verify that Planet Data API can retrieve a PSScene item.
+    """
+
+    item_id = "20260726_175350_76_254f"
 
     auth = Auth.from_key(get_planet_key())
 
-    async with Session(auth=auth) as sess:
+    async with Session(auth=auth) as session:
+        client = DataClient(session)
 
-        client = DataClient(sess)
+        item = await client.get_item("PSScene", item_id)
 
-        print(await client.get_item("PSScene", "20260726_175350_76_254f"))
-
-
-asyncio.run(main())
+    assert item is not None
+    assert item["id"] == item_id

@@ -1,0 +1,248 @@
+﻿(function () {
+    "use strict";
+
+    const MAP_PAGE_ID = "geoshieldMapPage";
+    const INTELLIGENCE_PAGE_ID = "geoshieldIntelligencePage";
+    const NAV_ID = "workspaceNavigator";
+
+    let currentWorkspace = "map";
+
+    function getMapPage() {
+        return document.getElementById(MAP_PAGE_ID);
+    }
+
+    function getIntelligencePage() {
+        return document.getElementById(INTELLIGENCE_PAGE_ID);
+    }
+
+    function getNavigator() {
+        return document.getElementById(NAV_ID);
+    }
+
+    function updateNavigator() {
+        const nav = getNavigator();
+
+        if (!nav) {
+            return;
+        }
+
+        const mapButton = document.getElementById("workspaceMapArrow");
+        const intelligenceButton =
+            document.getElementById("workspaceIntelligenceArrow");
+
+        if (!mapButton || !intelligenceButton) {
+            return;
+        }
+
+        nav.dataset.workspace = currentWorkspace;
+
+        const atMap = currentWorkspace === "map";
+        const atIntelligence = currentWorkspace === "intelligence";
+
+        mapButton.disabled = atMap;
+        intelligenceButton.disabled = atIntelligence;
+
+        mapButton.setAttribute("aria-disabled", String(atMap));
+        intelligenceButton.setAttribute(
+            "aria-disabled",
+            String(atIntelligence)
+        );
+    }
+
+    function detectWorkspaceFromScroll() {
+        const mapPage = getMapPage();
+        const intelligencePage = getIntelligencePage();
+
+        if (!mapPage || !intelligencePage) {
+            return;
+        }
+
+        const viewportMiddle = window.scrollY + (window.innerHeight * 0.45);
+
+        const intelligenceTop = intelligencePage.offsetTop;
+
+        const nextWorkspace =
+            viewportMiddle >= intelligenceTop
+                ? "intelligence"
+                : "map";
+
+        if (nextWorkspace !== currentWorkspace) {
+            currentWorkspace = nextWorkspace;
+            updateNavigator();
+
+            document.body.classList.toggle(
+                "geoshield-map-mode",
+                currentWorkspace === "map"
+            );
+
+            document.body.classList.toggle(
+                "geoshield-intelligence-mode",
+                currentWorkspace === "intelligence"
+            );
+        }
+    }
+
+    function goToMap() {
+        const mapPage = getMapPage();
+
+        if (!mapPage) {
+            console.error("GeoShield Main Map page not found.");
+            return;
+        }
+
+        currentWorkspace = "map";
+        updateNavigator();
+
+        window.scrollTo({
+            top: Math.max(0, mapPage.offsetTop - 10),
+            behavior: "smooth"
+        });
+    }
+
+    function goToIntelligence() {
+        const intelligencePage = getIntelligencePage();
+
+        if (!intelligencePage) {
+            console.error(
+                "GeoShield Satellite Intelligence page not found."
+            );
+            return;
+        }
+
+        currentWorkspace = "intelligence";
+        updateNavigator();
+
+        window.scrollTo({
+            top: Math.max(0, intelligencePage.offsetTop - 10),
+            behavior: "smooth"
+        });
+    }
+
+    function createNavigator() {
+        let nav = getNavigator();
+
+        if (!nav) {
+            nav = document.createElement("div");
+
+            nav.id = NAV_ID;
+            nav.className = "workspace-navigator";
+
+            nav.innerHTML = `
+                <button
+                    type="button"
+                    id="workspaceMapArrow"
+                    class="workspace-nav-arrow"
+                    aria-label="Return to Main Map"
+                    title="Main Map">
+                    <span aria-hidden="true">↑</span>
+                </button>
+
+                <div
+                    class="workspace-nav-divider"
+                    aria-hidden="true">
+                </div>
+
+                <button
+                    type="button"
+                    id="workspaceIntelligenceArrow"
+                    class="workspace-nav-arrow"
+                    aria-label="Go to Satellite Intelligence"
+                    title="Satellite Intelligence">
+                    <span aria-hidden="true">↓</span>
+                </button>
+            `;
+
+            document.body.appendChild(nav);
+        }
+
+        if (nav.dataset.bound !== "true") {
+            nav.addEventListener("click", function (event) {
+                const button = event.target.closest("button");
+
+                if (!button || button.disabled) {
+                    return;
+                }
+
+                if (button.id === "workspaceMapArrow") {
+                    goToMap();
+                    return;
+                }
+
+                if (
+                    button.id ===
+                    "workspaceIntelligenceArrow"
+                ) {
+                    goToIntelligence();
+                }
+            });
+
+            nav.dataset.bound = "true";
+        }
+
+        updateNavigator();
+    }
+
+    function initialize() {
+        const mapPage = getMapPage();
+        const intelligencePage = getIntelligencePage();
+
+        if (!mapPage || !intelligencePage) {
+            console.error(
+                "GeoShield workspace pages are missing."
+            );
+            return;
+        }
+
+        /*
+         * IMPORTANT:
+         * We deliberately DO NOT hide either page.
+         *
+         * Main Map and Satellite Intelligence are two
+         * vertically stacked sections of the same OS workspace.
+         */
+
+        mapPage.classList.add("workspace-page-active");
+        intelligencePage.classList.add("workspace-page-active");
+
+        document.body.classList.add("geoshield-map-mode");
+
+        createNavigator();
+
+        window.addEventListener(
+            "scroll",
+            detectWorkspaceFromScroll,
+            { passive: true }
+        );
+
+        window.addEventListener(
+            "resize",
+            detectWorkspaceFromScroll
+        );
+
+        currentWorkspace = "map";
+        updateNavigator();
+
+        console.log(
+            "GeoShield Workspace Navigation READY — MAP → INTELLIGENCE"
+        );
+    }
+
+    window.GeoShieldWorkspace = {
+        initialize: initialize,
+        goToMap: goToMap,
+        goToIntelligence: goToIntelligence,
+        getCurrentWorkspace: function () {
+            return currentWorkspace;
+        }
+    };
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+    } else {
+        initialize();
+    }
+})();

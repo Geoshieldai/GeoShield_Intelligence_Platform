@@ -145,7 +145,7 @@ assets/
 Clone the repository
 
 ```bash
-git clone https://github.com/davyla254-beep/GeoShield_Intelligence_Platform.git
+git clone https://github.com/Geoshieldai/GeoShield_Intelligence_Platform.git
 ```
 
 Move into the project

@@ -1,0 +1,450 @@
+
+============================================================
+FILE: backend/satellite/test_assets.py
+============================================================
+import asyncio
+
+from backend.satellite.planet_assets import PlanetAssetEngine
+
+SCENE_ID = "20260726_170618_52_24d8"
+
+async def main():
+
+    engine = PlanetAssetEngine()
+
+    asset = await engine.get_asset(
+        SCENE_ID,
+        "ortho_visual"
+    )
+
+    print(asset)
+
+asyncio.run(main())
+
+============================================================
+FILE: backend/satellite/test_itemtypes.py
+============================================================
+import asyncio
+
+from planet import Session, Auth
+from planet.clients import DataClient
+
+from backend.satellite.auth import get_planet_key
+
+
+async def main():
+
+    auth = Auth.from_key(get_planet_key())
+
+    async with Session(auth=auth) as sess:
+
+        client = DataClient(sess)
+
+        print(await client.get_item("PSScene", "20260726_175350_76_254f"))
+
+
+asyncio.run(main())
+
+============================================================
+FILE: backend/satellite/test_latest.py
+============================================================
+import asyncio
+
+from backend.satellite.planet_search import PlanetSearchEngine
+
+
+async def main():
+
+    engine = PlanetSearchEngine()
+
+    images = await engine.latest_images(limit=5)
+
+    print("\nLATEST IMAGES\n")
+
+    for img in images:
+
+        print("-" * 30)
+        print("ID:", img["id"])
+        print("Published:", img["published"])
+        print("Stage:", img["stage"])
+        print("Quality:", img["quality"])
+        print("Cloud:", img["cloud"])
+
+
+asyncio.run(main())
+
+============================================================
+FILE: backend/satellite/test_manager.py
+============================================================
+import asyncio
+
+from backend.satellite.satellite_manager import SatelliteManager
+
+
+async def main():
+
+    manager = SatelliteManager()
+
+    planet = manager.provider("planet")
+
+    scenes = await planet.latest_images(limit=3)
+
+    print(scenes)
+
+
+asyncio.run(main())
+
+============================================================
+FILE: backend/satellite/test_permissions.py
+============================================================
+import asyncio
+
+from planet import Session, Auth
+from planet.clients import DataClient
+
+from backend.satellite.auth import get_planet_key
+
+ITEM_ID = "20260726_181751_21_24d1"
+
+async def main():
+    auth = Auth.from_key(get_planet_key())
+
+    async with Session(auth=auth) as sess:
+        client = DataClient(sess)
+
+        item = await client.get_item("PSScene", ITEM_ID)
+
+        print("\nPERMISSIONS:\n")
+        print(item["_permissions"])
+
+asyncio.run(main())
+
+============================================================
+FILE: backend/satellite/test_sdk.py
+============================================================
+import asyncio
+
+from planet import Auth
+from backend.satellite.auth import get_planet_key
+
+
+async def main():
+    key = get_planet_key()
+
+    auth = Auth.from_key(key)
+
+    print("Planet SDK authentication successful.")
+    print(auth)
+
+
+asyncio.run(main())
+
+============================================================
+FILE: backend/satellite/test_search.py
+============================================================
+import asyncio
+
+from backend.satellite.planet_search import PlanetSearchEngine
+
+
+async def main():
+
+    engine = PlanetSearchEngine()
+
+    results = await engine.latest_images(
+        cloud_cover=0.1,
+        limit=5
+    )
+
+    print("\nLatest Planet Images\n")
+
+    for image in results:
+        print(image)
+
+
+asyncio.run(main())
+
+============================================================
+FILE: backend/satellite/test_service.py
+============================================================
+import asyncio
+
+from backend.satellite.planet_service import PlanetService
+
+
+async def main():
+
+    service = PlanetService()
+
+    result = await service.latest_scene_assets()
+
+    if result is None:
+        print("No scenes found.")
+        return
+
+    print("\nLATEST SCENE\n")
+    print(result["scene"])
+
+    print("\nASSETS\n")
+    print(result["assets"])
+
+
+asyncio.run(main())
+
+============================================================
+FILE: backend/satellite/auth.py
+============================================================
+"""
+Planet API authentication utilities.
+"""
+
+from __future__ import annotations
+
+import os
+
+
+def get_planet_key() -> str:
+    """
+    Return the Planet API key from the environment.
+
+    Raises:
+        ValueError: If PLANET_API_KEY is not configured.
+    """
+
+    key = os.getenv("PLANET_API_KEY", "").strip()
+
+    if not key:
+        raise ValueError("Planet API Key not found.")
+
+    return key
+
+============================================================
+FILE: backend/satellite/planet_assets.py
+============================================================
+from planet import Session
+from planet.clients import DataClient
+from planet import Auth
+
+from backend.satellite.auth import get_planet_key
+
+
+class PlanetAssetEngine:
+
+    def __init__(self):
+        self.auth = Auth.from_key(get_planet_key())
+
+    async def list_assets(self, item_id):
+
+        async with Session(auth=self.auth) as sess:
+
+            client = DataClient(sess)
+
+            item = await client.get_item("PSScene", item_id)
+
+            return item.get("assets", [])
+
+    async def get_asset(self, item_id, asset_type):
+
+        assets = await self.list_assets(item_id)
+
+        if asset_type in assets:
+            return asset_type
+
+        return None
+
+============================================================
+FILE: backend/satellite/planet_search.py
+============================================================
+from planet import Session
+from planet.clients import DataClient
+from planet import Auth
+
+from backend.satellite.auth import get_planet_key
+
+
+class PlanetSearchEngine:
+
+    def __init__(self):
+        self.auth = Auth.from_key(get_planet_key())
+
+    async def latest_images(
+        self,
+        geometry=None,
+        start_date=None,
+        end_date=None,
+        cloud_cover=0.2,
+        limit=10
+    ):
+
+        filters = []
+
+        if start_date and end_date:
+            filters.append({
+                "type": "DateRangeFilter",
+                "field_name": "acquired",
+                "config": {
+                    "gte": start_date,
+                    "lte": end_date
+                }
+            })
+
+        filters.append({
+            "type": "RangeFilter",
+            "field_name": "cloud_cover",
+            "config": {
+                "lte": cloud_cover
+            }
+        })
+
+        search_filter = {
+            "type": "AndFilter",
+            "config": filters
+        }
+
+        async with Session(auth=self.auth) as sess:
+
+            client = DataClient(sess)
+
+            results = []
+
+            async for item in client.search(
+                item_types=["PSScene"],
+                search_filter=search_filter,
+                geometry=geometry,
+                sort="published asc",
+                limit=100
+            ):
+
+                stage = item["properties"].get("publishing_stage", "")
+                quality = item["properties"].get("quality_category", "")
+
+               
+
+                results.append({
+                    "id": item["id"],
+                    "published": item["properties"]["published"],
+                    "stage": stage,
+                    "quality": quality,
+                    "cloud": item["properties"]["cloud_cover"]
+                })
+
+            return results
+
+============================================================
+FILE: backend/satellite/planet_service.py
+============================================================
+from backend.satellite.planet_search import PlanetSearchEngine
+from backend.satellite.planet_assets import PlanetAssetEngine
+
+
+class PlanetService:
+
+    def __init__(self):
+        self.search_engine = PlanetSearchEngine()
+        self.asset_engine = PlanetAssetEngine()
+
+    async def latest_images(
+        self,
+        geometry=None,
+        start_date=None,
+        end_date=None,
+        cloud_cover=0.2,
+        limit=10
+    ):
+        return await self.search_engine.latest_images(
+            geometry=geometry,
+            start_date=start_date,
+            end_date=end_date,
+            cloud_cover=cloud_cover,
+            limit=limit
+        )
+
+    async def scene_assets(self, item_id):
+        return await self.asset_engine.list_assets(item_id)
+
+    async def latest_scene_assets(
+        self,
+        geometry=None,
+        cloud_cover=0.2
+    ):
+        scenes = await self.latest_images(
+            geometry=geometry,
+            cloud_cover=cloud_cover,
+            limit=1
+        )
+
+        if not scenes:
+            return None
+
+        scene = scenes[0]
+
+        assets = await self.scene_assets(scene["id"])
+
+        return {
+            "scene": scene,
+            "assets": assets
+        }
+
+============================================================
+FILE: backend/satellite/satellite_manager.py
+============================================================
+from backend.satellite.providers.planet_provider import PlanetProvider
+
+
+class SatelliteManager:
+
+    def __init__(self):
+
+        self.providers = {
+            "planet": PlanetProvider()
+        }
+
+    def provider(self, name):
+
+        return self.providers[name]
+
+============================================================
+FILE: backend/satellite/conftest.py
+============================================================
+"""
+Pytest configuration for Planet satellite integration tests.
+"""
+
+import os
+
+import pytest
+
+
+def pytest_collection_modifyitems(config, items):
+    """
+    Skip Planet live integration tests when PLANET_API_KEY is unavailable.
+    """
+
+    planet_key = os.getenv("PLANET_API_KEY", "").strip()
+
+    if planet_key:
+        return
+
+    skip_marker = pytest.mark.skip(
+        reason="PLANET_API_KEY is not configured."
+    )
+
+    for item in items:
+        path = str(item.fspath).replace("\\", "/")
+
+        if "/backend/satellite/" in path and (
+            "test_asset" in path
+            or "test_latest" in path
+            or "test_search" in path
+            or "test_service" in path
+            or "test_permissions" in path
+            or "test_sdk" in path
+            or "test_manager" in path
+        ):
+            item.add_marker(skip_marker)
+
+============================================================
+FILE: pytest.ini
+============================================================
+[pytest]
+pythonpath = .

@@ -1,21 +1,30 @@
-import asyncio
+"""
+Live Planet Data API permission test.
+"""
 
-from planet import Session, Auth
+import pytest
+from planet import Auth, Session
 from planet.clients import DataClient
 
 from backend.satellite.auth import get_planet_key
 
-ITEM_ID = "20260726_181751_21_24d1"
 
-async def main():
+@pytest.mark.live
+@pytest.mark.asyncio
+async def test_planet_item_permissions():
+    """
+    Verify that a Planet PSScene item exposes its permissions metadata.
+    """
+
+    item_id = "20260726_181751_21_24d1"
+
     auth = Auth.from_key(get_planet_key())
 
-    async with Session(auth=auth) as sess:
-        client = DataClient(sess)
+    async with Session(auth=auth) as session:
+        client = DataClient(session)
 
-        item = await client.get_item("PSScene", ITEM_ID)
+        item = await client.get_item("PSScene", item_id)
 
-        print("\nPERMISSIONS:\n")
-        print(item["_permissions"])
-
-asyncio.run(main())
+    assert item is not None
+    assert "_permissions" in item
+    assert item["_permissions"] is not None
