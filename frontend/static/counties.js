@@ -80,7 +80,7 @@ function loadCounties() {
 
                             // Zoom to county
 
-                            map.fitBounds(layer.getBounds(), {
+                            window.map.fitBounds(layer.getBounds(), {
 
                                 padding: [20, 20],
                                 maxZoom: 10
@@ -105,9 +105,9 @@ function loadCounties() {
 
 <hr>
 
-🌧 Rainfall: ${Number(info.Rainfall_mm).toFixed(0)} mm<br>
+🌧️ Rainfall: ${Number(info.Rainfall_mm).toFixed(0)} mm<br>
 
-🌡 Temperature: ${Number(info.Temperature_C).toFixed(1)} °C<br>
+🌡️ Temperature: ${Number(info.Temperature_C).toFixed(1)} °C<br>
 
 🌿 NDVI: ${Number(info.NDVI).toFixed(2)}<br>
 

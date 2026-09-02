@@ -1,0 +1,23 @@
+"""
+Global Platform Constants
+"""
+
+APP_NAME = "GeoShield"
+
+DEFAULT_CRS = "EPSG:4326"
+
+CACHE_DIRECTORY = "cache"
+
+DATA_DIRECTORY = "data"
+
+LOG_DIRECTORY = "logs"
+
+MODEL_DIRECTORY = "models"
+
+SATELLITE_DIRECTORY = "satellites"
+
+TEMP_DIRECTORY = "temp"
+
+MAX_UPLOAD_SIZE_MB = 500
+
+DEFAULT_TIMEOUT_SECONDS = 60

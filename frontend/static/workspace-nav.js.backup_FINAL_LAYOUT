@@ -1,0 +1,1074 @@
+(function () {
+    "use strict";
+
+    /*
+     * ============================================================
+     * GEOSHIELD WORKSPACE NAVIGATION
+     * ============================================================
+     *
+     * Two full workspaces:
+     *
+     *   MAP MODE
+     *      - Main map
+     *      - Right information panel
+     *      - Bottom dashboard cards
+     *
+     *   INTELLIGENCE MODE
+     *      - Satellite Intelligence
+     *      - Sentinel-2 product
+     *
+     * Navigation:
+     *      ↑ = Main Map
+     *      ↓ = Satellite Intelligence
+     *
+     * IMPORTANT:
+     * This file owns ONE navigator only.
+     * ============================================================
+     */
+
+    const MAP_TARGET_ID = "map";
+    const INTELLIGENCE_TARGET_ID = "satelliteCenter";
+    const NAVIGATOR_ID = "workspaceNavigator";
+
+    let currentWorkspace = "map";
+    let mapTarget = null;
+    let intelligenceTarget = null;
+    let initialized = false;
+
+
+    /* ============================================================
+       TARGETS
+       ============================================================ */
+
+    function refreshTargets() {
+
+        mapTarget =
+            document.getElementById(MAP_TARGET_ID);
+
+        intelligenceTarget =
+            document.getElementById(
+                INTELLIGENCE_TARGET_ID
+            );
+
+        console.log(
+            "GeoShield workspace targets:",
+            {
+                map: !!mapTarget,
+                intelligence: !!intelligenceTarget
+            }
+        );
+    }
+
+
+    /* ============================================================
+       WORKSPACE VISIBILITY
+       ============================================================ */
+
+    function setMapVisibility(visible) {
+
+        const workspace =
+            document.querySelector(".workspace");
+
+        const bottomDashboard =
+            document.querySelector(".bottom-dashboard");
+
+        const satelliteDataCenter =
+            document.getElementById(
+                "satelliteDataCenter"
+            );
+
+        const satelliteCenter =
+            document.getElementById(
+                "satelliteCenter"
+            );
+
+        const sentinel2Product =
+            document.getElementById(
+                "sentinel2Product"
+            );
+
+
+        if (workspace) {
+
+            workspace.style.display =
+                visible ? "grid" : "none";
+        }
+
+
+        if (bottomDashboard) {
+
+            bottomDashboard.style.display =
+                visible ? "grid" : "none";
+        }
+
+
+        if (satelliteDataCenter) {
+
+            satelliteDataCenter.style.display =
+                "none";
+        }
+
+
+        if (satelliteCenter) {
+
+            satelliteCenter.style.display =
+                visible ? "none" : "block";
+        }
+
+
+        if (sentinel2Product) {
+
+            sentinel2Product.style.display =
+                visible ? "none" : "block";
+        }
+    }
+
+
+    function setIntelligenceVisibility(visible) {
+
+        setMapVisibility(!visible);
+
+        document.body.classList.toggle(
+            "geoshield-map-mode",
+            !visible
+        );
+
+        document.body.classList.toggle(
+            "geoshield-intelligence-mode",
+            visible
+        );
+    }
+
+
+    /* ============================================================
+       NAVIGATOR
+       ============================================================ */
+
+    function removeDuplicateNavigators() {
+
+        const navigators =
+            document.querySelectorAll(
+                "#" + NAVIGATOR_ID
+            );
+
+        if (navigators.length <= 1) {
+            return;
+        }
+
+        console.warn(
+            "GeoShield: removing duplicate workspace navigators:",
+            navigators.length
+        );
+
+        for (
+            let i = 1;
+            i < navigators.length;
+            i++
+        ) {
+
+            navigators[i].remove();
+        }
+    }
+
+
+    function createWorkspaceNavigator() {
+
+        removeDuplicateNavigators();
+
+        let navigator =
+            document.getElementById(
+                NAVIGATOR_ID
+            );
+
+
+        if (!navigator) {
+
+            navigator =
+                document.createElement("div");
+
+            navigator.id =
+                NAVIGATOR_ID;
+
+            navigator.className =
+                "workspace-navigator";
+
+            navigator.setAttribute(
+                "role",
+                "navigation"
+            );
+
+            navigator.setAttribute(
+                "aria-label",
+                "GeoShield workspace navigation"
+            );
+
+
+            navigator.innerHTML =
+
+                '<button ' +
+                'type="button" ' +
+                'class="workspace-nav-arrow" ' +
+                'id="workspaceMapArrow" ' +
+                'title="Main Map" ' +
+                'aria-label="Go to Main Map">' +
+                '<span aria-hidden="true">&#8593;</span>' +
+                '</button>' +
+
+                '<div ' +
+                'class="workspace-nav-divider" ' +
+                'aria-hidden="true">' +
+                '</div>' +
+
+                '<button ' +
+                'type="button" ' +
+                'class="workspace-nav-arrow" ' +
+                'id="workspaceIntelligenceArrow" ' +
+                'title="Satellite Intelligence" ' +
+                'aria-label="Go to Satellite Intelligence">' +
+                '<span aria-hidden="true">&#8595;</span>' +
+                '</button>';
+
+
+            document.body.appendChild(
+                navigator
+            );
+        }
+
+
+        removeDuplicateNavigators();
+
+        bindNavigationEvents();
+
+        updateNavigator();
+    }
+
+
+    /* ============================================================
+       NAVIGATION STATE
+       ============================================================ */
+
+    function updateNavigator() {
+
+        const navigator =
+            document.getElementById(
+                NAVIGATOR_ID
+            );
+
+        if (!navigator) {
+            return;
+        }
+
+
+        const upButton =
+            document.getElementById(
+                "workspaceMapArrow"
+            );
+
+        const downButton =
+            document.getElementById(
+                "workspaceIntelligenceArrow"
+            );
+
+
+        navigator.dataset.workspace =
+            currentWorkspace;
+
+
+        if (upButton) {
+
+            const disabled =
+                currentWorkspace === "map";
+
+            upButton.disabled =
+                disabled;
+
+            upButton.setAttribute(
+                "aria-disabled",
+                disabled ? "true" : "false"
+            );
+        }
+
+
+        if (downButton) {
+
+            const disabled =
+                currentWorkspace ===
+                "intelligence";
+
+            downButton.disabled =
+                disabled;
+
+            downButton.setAttribute(
+                "aria-disabled",
+                disabled ? "true" : "false"
+            );
+        }
+    }
+
+
+    /* ============================================================
+       GO TO MAIN MAP
+       ============================================================ */
+
+    function goToMainMap() {
+
+        refreshTargets();
+
+        currentWorkspace =
+            "map";
+
+        setIntelligenceVisibility(
+            false
+        );
+
+        updateNavigator();
+
+
+        if (mapTarget) {
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+            setTimeout(
+                function () {
+
+                    if (
+                        window.GeoShieldMap &&
+                        typeof
+                        window.GeoShieldMap.invalidateSize ===
+                        "function"
+                    ) {
+
+                        window.GeoShieldMap.invalidateSize();
+                    }
+
+                    if (
+                        window.map &&
+                        typeof
+                        window.map.invalidateSize ===
+                        "function"
+                    ) {
+
+                        window.map.invalidateSize();
+                    }
+
+                },
+                350
+            );
+        }
+
+
+        console.log(
+            "GeoShield workspace: MAIN MAP"
+        );
+    }
+
+
+    /* ============================================================
+       GO TO SATELLITE INTELLIGENCE
+       ============================================================ */
+
+    function goToIntelligence() {
+
+        refreshTargets();
+
+        currentWorkspace =
+            "intelligence";
+
+        setIntelligenceVisibility(
+            true
+        );
+
+        updateNavigator();
+
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+
+        console.log(
+            "GeoShield workspace: SATELLITE INTELLIGENCE"
+        );
+    }
+
+
+    /* ============================================================
+       EVENTS
+       ============================================================ */
+
+    function bindNavigationEvents() {
+
+        const navigator =
+            document.getElementById(
+                NAVIGATOR_ID
+            );
+
+        if (!navigator) {
+            return;
+        }
+
+
+        if (
+            navigator.dataset.bound ===
+            "true"
+        ) {
+            return;
+        }
+
+
+        navigator.dataset.bound =
+            "true";
+
+
+        navigator.addEventListener(
+            "click",
+            function (event) {
+
+                const button =
+                    event.target.closest(
+                        "button"
+                    );
+
+                if (!button) {
+                    return;
+                }
+
+
+                if (
+                    button.id ===
+                    "workspaceMapArrow"
+                ) {
+
+                    goToMainMap();
+
+                    return;
+                }
+
+
+                if (
+                    button.id ===
+                    "workspaceIntelligenceArrow"
+                ) {
+
+                    goToIntelligence();
+
+                    return;
+                }
+            }
+        );
+    }
+
+
+    /* ============================================================
+       CSS
+       ============================================================ */
+
+    function injectWorkspaceCSS() {
+
+        const existing =
+            document.getElementById(
+                "geoshield-workspace-navigation-css"
+            );
+
+        if (existing) {
+            return;
+        }
+
+
+        const style =
+            document.createElement("style");
+
+        style.id =
+            "geoshield-workspace-navigation-css";
+
+
+        style.textContent = `
+
+            /* ==================================================
+               MAIN APPLICATION GEOMETRY
+               ================================================== */
+
+            .main-content {
+                display: grid !important;
+
+                grid-template-rows:
+                    60px
+                    minmax(0, 1fr)
+                    110px !important;
+
+                height: 100vh !important;
+
+                min-height: 0 !important;
+
+                overflow: hidden !important;
+            }
+
+
+            /* ==================================================
+               MAIN MAP WORKSPACE
+               ================================================== */
+
+            .workspace {
+                display: grid !important;
+
+                grid-template-columns:
+                    minmax(0, 1fr)
+                    250px !important;
+
+                gap: 10px !important;
+
+                padding: 8px !important;
+
+                min-height: 0 !important;
+
+                height: 100% !important;
+
+                overflow: hidden !important;
+            }
+
+
+            .map-section {
+                min-width: 0 !important;
+
+                min-height: 0 !important;
+
+                height: 100% !important;
+
+                overflow: hidden !important;
+            }
+
+
+            #map {
+                width: 100% !important;
+
+                height: 100% !important;
+
+                min-height: 0 !important;
+            }
+
+
+            /* ==================================================
+               RIGHT INFORMATION PANEL
+               ================================================== */
+
+            .info-panel {
+                min-width: 0 !important;
+
+                min-height: 0 !important;
+
+                height: 100% !important;
+
+                overflow-y: auto !important;
+
+                overflow-x: hidden !important;
+
+                padding: 7px !important;
+
+                gap: 7px !important;
+            }
+
+
+            .panel-card {
+                min-height: 58px !important;
+
+                padding:
+                    8px 10px !important;
+
+                border-radius: 9px !important;
+            }
+
+
+            .panel-card h3 {
+                font-size: 13px !important;
+
+                margin-bottom: 4px !important;
+            }
+
+
+            .panel-card p {
+                font-size: 11px !important;
+
+                line-height: 1.3 !important;
+            }
+
+
+            .panel-card h1 {
+                font-size: 20px !important;
+
+                margin-top: 0 !important;
+            }
+
+
+            /* ==================================================
+               BOTTOM DASHBOARD
+               ================================================== */
+
+            .bottom-dashboard {
+                display: grid !important;
+
+                grid-auto-flow: column !important;
+
+                grid-auto-columns:
+                    minmax(125px, 150px) !important;
+
+                grid-template-rows:
+                    minmax(0, 1fr) !important;
+
+                gap: 8px !important;
+
+                width: 100% !important;
+
+                height: 110px !important;
+
+                min-height: 110px !important;
+
+                max-height: 110px !important;
+
+                box-sizing: border-box !important;
+
+                overflow-x: auto !important;
+
+                overflow-y: hidden !important;
+
+                padding:
+                    8px 10px !important;
+
+                align-items: center !important;
+            }
+
+
+            .bottom-card {
+                height: 68px !important;
+
+                min-height: 68px !important;
+
+                max-height: 68px !important;
+
+                box-sizing: border-box !important;
+
+                padding: 8px !important;
+            }
+
+
+            /* ==================================================
+               SATELLITE WORKSPACE
+               ================================================== */
+
+            #satelliteDataCenter {
+                display: none !important;
+            }
+
+
+            #satelliteCenter {
+                box-sizing: border-box !important;
+
+                width: 100% !important;
+
+                min-height: 0 !important;
+
+                overflow-x: hidden !important;
+
+                overflow-y: auto !important;
+
+                padding:
+                    30px 36px 100px 30px !important;
+            }
+
+
+            #sentinel2Product {
+                box-sizing: border-box !important;
+
+                width: 100% !important;
+
+                overflow-x: hidden !important;
+
+                padding:
+                    30px 36px 100px 30px !important;
+            }
+
+
+            /* ==================================================
+               INTELLIGENCE MODE
+               ================================================== */
+
+            body.geoshield-intelligence-mode {
+
+                overflow: hidden !important;
+            }
+
+
+            body.geoshield-intelligence-mode
+            .workspace {
+
+                display: none !important;
+            }
+
+
+            body.geoshield-intelligence-mode
+            .bottom-dashboard {
+
+                display: none !important;
+            }
+
+
+            body.geoshield-intelligence-mode
+            #satelliteDataCenter {
+
+                display: none !important;
+            }
+
+
+            body.geoshield-intelligence-mode
+            #satelliteCenter {
+
+                display: block !important;
+
+                height: calc(100vh - 60px) !important;
+
+                max-height: calc(100vh - 60px) !important;
+
+                overflow-y: auto !important;
+            }
+
+
+            body.geoshield-intelligence-mode
+            #sentinel2Product {
+
+                display: block !important;
+            }
+
+
+            /* ==================================================
+               MAP MODE
+               ================================================== */
+
+            body.geoshield-map-mode
+            #satelliteDataCenter,
+
+            body.geoshield-map-mode
+            #satelliteCenter,
+
+            body.geoshield-map-mode
+            #sentinel2Product {
+
+                display: none !important;
+            }
+
+
+            body.geoshield-map-mode
+            .workspace {
+
+                display: grid !important;
+            }
+
+
+            body.geoshield-map-mode
+            .bottom-dashboard {
+
+                display: grid !important;
+            }
+
+
+            /* ==================================================
+               ONE NAVIGATOR ONLY
+               ================================================== */
+
+            #workspaceNavigator {
+
+                position: fixed !important;
+
+                top: 50% !important;
+
+                right: 10px !important;
+
+                left: auto !important;
+
+                bottom: auto !important;
+
+                transform:
+                    translateY(-50%) !important;
+
+                width: 30px !important;
+
+                height: auto !important;
+
+                min-width: 30px !important;
+
+                padding: 4px !important;
+
+                display: flex !important;
+
+                flex-direction: column !important;
+
+                align-items: center !important;
+
+                justify-content: center !important;
+
+                gap: 4px !important;
+
+                background:
+                    rgba(10,18,30,.92) !important;
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.15) !important;
+
+                border-radius: 16px !important;
+
+                box-shadow:
+                    0 5px 18px
+                    rgba(0,0,0,.35) !important;
+
+                z-index: 2147483647 !important;
+            }
+
+
+            #workspaceNavigator
+            .workspace-nav-arrow {
+
+                width: 22px !important;
+
+                height: 22px !important;
+
+                min-width: 22px !important;
+
+                min-height: 22px !important;
+
+                max-width: 22px !important;
+
+                max-height: 22px !important;
+
+                padding: 0 !important;
+
+                margin: 0 !important;
+
+                display: flex !important;
+
+                align-items: center !important;
+
+                justify-content: center !important;
+
+                border: none !important;
+
+                border-radius: 50% !important;
+
+                font-size: 13px !important;
+
+                line-height: 1 !important;
+
+                cursor: pointer !important;
+            }
+
+
+            #workspaceNavigator
+            .workspace-nav-arrow span {
+
+                font-size: 13px !important;
+
+                line-height: 1 !important;
+            }
+
+
+            #workspaceNavigator
+            .workspace-nav-arrow:disabled {
+
+                opacity: .25 !important;
+
+                cursor: default !important;
+            }
+
+
+            #workspaceNavigator
+            .workspace-nav-divider {
+
+                width: 14px !important;
+
+                height: 1px !important;
+
+                background:
+                    rgba(255,255,255,.22) !important;
+            }
+
+
+            /* ==================================================
+               MOBILE
+               ================================================== */
+
+            @media (max-width: 900px) {
+
+                .workspace {
+
+                    grid-template-columns:
+                        minmax(0, 1fr)
+                        220px !important;
+                }
+
+                #satelliteCenter,
+                #sentinel2Product {
+
+                    padding:
+                        24px 24px 80px 24px !important;
+                }
+
+                #workspaceNavigator {
+
+                    right: 6px !important;
+                }
+            }
+
+            /* FINAL SENTINEL-2 WORKSPACE ISOLATION */
+
+            body.geoshield-map-mode #sentinel2Product {
+                display: none !important;
+            }
+
+            body.geoshield-map-mode #satelliteCenter,
+            body.geoshield-map-mode #satelliteDataCenter,
+            body.geoshield-map-mode #geoshieldIntelligencePage {
+                display: none !important;
+            }
+
+            body.geoshield-intelligence-mode #geoshieldMapPage {
+                display: none !important;
+            }
+
+            body.geoshield-intelligence-mode #geoshieldIntelligencePage {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+
+        `;
+
+
+        document.head.appendChild(
+            style
+        );
+    }
+
+
+    /* ============================================================
+       INITIALIZATION
+       ============================================================ */
+
+    function initializeWorkspaceNavigation() {
+
+        if (initialized) {
+
+            removeDuplicateNavigators();
+
+            return;
+        }
+
+        initialized = true;
+
+
+        refreshTargets();
+
+        injectWorkspaceCSS();
+
+        createWorkspaceNavigator();
+
+
+        /*
+         * Always start at the Main Map.
+         */
+        currentWorkspace =
+            "map";
+
+        setIntelligenceVisibility(
+            false
+        );
+
+        updateNavigator();
+
+
+        console.log(
+            "======================================"
+        );
+
+        console.log(
+            "GeoShield workspace navigator initialized."
+        );
+
+        console.log(
+            "Navigation mode: TWO FULL WORKSPACES"
+        );
+
+        console.log(
+            "UP: Main Map"
+        );
+
+        console.log(
+            "DOWN: Satellite Intelligence"
+        );
+
+        console.log(
+            "Navigator: SINGLE INSTANCE"
+        );
+
+        console.log(
+            "Bottom dashboard: CONTAINED"
+        );
+
+        console.log(
+            "======================================"
+        );
+    }
+
+
+    /* ============================================================
+       PUBLIC API
+       ============================================================ */
+
+    window.GeoShieldWorkspace = {
+
+        initialize:
+            initializeWorkspaceNavigation,
+
+        goToMap:
+            goToMainMap,
+
+        goToIntelligence:
+            goToIntelligence,
+
+        getCurrentWorkspace:
+            function () {
+                return currentWorkspace;
+            },
+
+        refreshTargets:
+            refreshTargets,
+
+        setIntelligenceVisibility:
+            setIntelligenceVisibility
+    };
+
+
+    /* ============================================================
+       START
+       ============================================================ */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeWorkspaceNavigation,
+            {
+                once: true
+            }
+        );
+
+    } else {
+
+        initializeWorkspaceNavigation();
+    }
+
+})();

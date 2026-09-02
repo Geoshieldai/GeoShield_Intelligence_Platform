@@ -1,0 +1,412 @@
+﻿(function () {
+
+    "use strict";
+
+    /*
+    ============================================================
+    GEOSHIELD GLOBAL SATELLITE INTELLIGENCE NAVIGATOR
+    ============================================================
+
+    PURPOSE
+
+        Navigate the COMPLETE Satellite Intelligence canvas.
+
+        The horizontal canvas contains:
+
+            - Satellite Intelligence cards
+            - Open satellite product panels
+            - Sentinel-2 imagery
+            - Future satellite imagery/products
+
+        This navigator controls ONLY the intelligence viewport.
+
+    NEVER:
+
+        - scroll the document vertically
+        - change workspace
+        - open satellites
+        - close satellites
+        - activate Sentinel-2
+        - use scrollIntoView()
+        - use window.scrollTo()
+        - use IntersectionObserver()
+        - manipulate satellite card transforms
+        - compete with satellites.js
+
+    ============================================================
+    */
+
+    const VIEWPORT_ID =
+        "satelliteIntelligenceViewport";
+
+    const LEFT_BUTTON_ID =
+        "satelliteNavLeft";
+
+    const RIGHT_BUTTON_ID =
+        "satelliteNavRight";
+
+
+    let initialized = false;
+
+
+    function getViewport() {
+
+        return document.getElementById(
+            VIEWPORT_ID
+        );
+
+    }
+
+
+    function getButtons() {
+
+        return {
+
+            left:
+                document.getElementById(
+                    LEFT_BUTTON_ID
+                ),
+
+            right:
+                document.getElementById(
+                    RIGHT_BUTTON_ID
+                )
+
+        };
+
+    }
+
+
+    function getMaximumScroll(viewport) {
+
+        if (!viewport) {
+
+            return 0;
+
+        }
+
+        return Math.max(
+            0,
+            viewport.scrollWidth -
+            viewport.clientWidth
+        );
+
+    }
+
+
+    function updateButtons() {
+
+        const viewport =
+            getViewport();
+
+        const {
+            left,
+            right
+        } =
+            getButtons();
+
+
+        if (!viewport) {
+
+            return;
+
+        }
+
+
+        const current =
+            viewport.scrollLeft;
+
+        const maximum =
+            getMaximumScroll(
+                viewport
+            );
+
+
+        if (left) {
+
+            left.disabled =
+                current <= 2;
+
+        }
+
+
+        if (right) {
+
+            right.disabled =
+                current >=
+                maximum - 2;
+
+        }
+
+    }
+
+
+    function getMovementAmount() {
+
+        const viewport =
+            getViewport();
+
+
+        if (!viewport) {
+
+            return 0;
+
+        }
+
+
+        /*
+        Move approximately 78% of the visible
+        intelligence canvas.
+
+        This prevents the navigator from making
+        tiny, useless movements.
+        */
+
+        return Math.max(
+            viewport.clientWidth * 0.78,
+            360
+        );
+
+    }
+
+
+    function move(direction) {
+
+        const viewport =
+            getViewport();
+
+
+        if (!viewport) {
+
+            return;
+
+        }
+
+
+        const maximum =
+            getMaximumScroll(
+                viewport
+            );
+
+
+        const amount =
+            getMovementAmount();
+
+
+        const current =
+            viewport.scrollLeft;
+
+
+        let target =
+            current +
+            (
+                direction *
+                amount
+            );
+
+
+        target =
+            Math.max(
+                0,
+                Math.min(
+                    target,
+                    maximum
+                )
+            );
+
+
+        viewport.scrollTo({
+
+            left:
+                target,
+
+            behavior:
+                "smooth"
+
+        });
+
+    }
+
+
+    function bindEvents() {
+
+        const viewport =
+            getViewport();
+
+        const {
+            left,
+            right
+        } =
+            getButtons();
+
+
+        if (
+            !viewport ||
+            !left ||
+            !right
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            viewport.dataset
+                .geoshieldGlobalSatelliteNavBound
+            === "true"
+        ) {
+
+            updateButtons();
+
+            return true;
+
+        }
+
+
+        viewport.dataset
+            .geoshieldGlobalSatelliteNavBound
+            = "true";
+
+
+        left.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                move(-1);
+
+            }
+        );
+
+
+        right.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                move(1);
+
+            }
+        );
+
+
+        viewport.addEventListener(
+            "scroll",
+            function () {
+
+                updateButtons();
+
+            },
+            {
+                passive: true
+            }
+        );
+
+
+        window.addEventListener(
+            "resize",
+            function () {
+
+                updateButtons();
+
+            },
+            {
+                passive: true
+            }
+        );
+
+
+        updateButtons();
+
+        return true;
+
+    }
+
+
+    function initialize() {
+
+        if (initialized) {
+
+            updateButtons();
+
+            return;
+
+        }
+
+
+        if (!bindEvents()) {
+
+            window.setTimeout(
+                initialize,
+                250
+            );
+
+            return;
+
+        }
+
+
+        initialized = true;
+
+
+        console.log(
+            "GeoShield Global Satellite Intelligence Navigator: READY"
+        );
+
+    }
+
+
+    window.GeoShieldSatelliteNavigator = {
+
+        initialize:
+            initialize,
+
+        refresh:
+            updateButtons,
+
+        left:
+            function () {
+
+                move(-1);
+
+            },
+
+        right:
+            function () {
+
+                move(1);
+
+            }
+
+    };
+
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            {
+                once: true
+            }
+        );
+
+    }
+    else {
+
+        initialize();
+
+    }
+
+
+})();

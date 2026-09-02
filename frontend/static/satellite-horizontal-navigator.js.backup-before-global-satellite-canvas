@@ -1,0 +1,450 @@
+﻿(function () {
+
+    "use strict";
+
+    /*
+    ============================================================
+    GEOSHIELD SATELLITE INTELLIGENCE HORIZONTAL NAVIGATOR
+    ============================================================
+
+    PURPOSE:
+
+        Navigate the COMPLETE Satellite Intelligence canvas
+        horizontally.
+
+        The canvas contains:
+
+            1. Satellite Intelligence cards
+            2. Open Satellite product/imagery panels
+
+        The navigator is positioned BELOW the intelligence
+        content.
+
+    RULES:
+
+        - Horizontal movement only.
+        - Never scroll the document vertically.
+        - Never change workspace.
+        - Never activate a satellite.
+        - Never open Sentinel-2.
+        - Never use scrollIntoView().
+        - Never use window.scrollTo().
+        - Never use IntersectionObserver().
+        - Never create competing satellite button handlers.
+
+    ============================================================
+    */
+
+    const PAGE_ID = "geoshieldIntelligencePage";
+    const LEFT_BUTTON_ID = "satelliteNavLeft";
+    const RIGHT_BUTTON_ID = "satelliteNavRight";
+
+    let initialized = false;
+
+
+    /*
+    ============================================================
+    FIND INTELLIGENCE PAGE
+    ============================================================
+    */
+
+    function getPage() {
+
+        return document.getElementById(PAGE_ID);
+
+    }
+
+
+    /*
+    ============================================================
+    FIND NAVIGATOR
+    ============================================================
+    */
+
+    function getButtons() {
+
+        return {
+
+            left:
+                document.getElementById(
+                    LEFT_BUTTON_ID
+                ),
+
+            right:
+                document.getElementById(
+                    RIGHT_BUTTON_ID
+                )
+
+        };
+
+    }
+
+
+    /*
+    ============================================================
+    CALCULATE HORIZONTAL RANGE
+    ============================================================
+    */
+
+    function getHorizontalRange() {
+
+        const page = getPage();
+
+        if (!page) {
+
+            return {
+                current: 0,
+                maximum: 0
+            };
+
+        }
+
+
+        const current =
+            Math.max(
+                0,
+                page.scrollLeft
+            );
+
+
+        const maximum =
+            Math.max(
+                0,
+                page.scrollWidth -
+                page.clientWidth
+            );
+
+
+        return {
+
+            current: current,
+
+            maximum: maximum
+
+        };
+
+    }
+
+
+    /*
+    ============================================================
+    BUTTON STATE
+    ============================================================
+    */
+
+    function updateButtons() {
+
+        const {
+            left,
+            right
+        } = getButtons();
+
+
+        const {
+            current,
+            maximum
+        } =
+            getHorizontalRange();
+
+
+        if (left) {
+
+            left.disabled =
+                current <= 2;
+
+        }
+
+
+        if (right) {
+
+            right.disabled =
+                current >=
+                maximum - 2;
+
+        }
+
+    }
+
+
+    /*
+    ============================================================
+    MOVEMENT SIZE
+    ============================================================
+    */
+
+    function getMovementAmount() {
+
+        const page = getPage();
+
+        if (!page) {
+
+            return 0;
+
+        }
+
+
+        /*
+        Move approximately one intelligence viewport
+        at a time, while preventing excessively tiny
+        movements.
+        */
+
+        return Math.max(
+            page.clientWidth * 0.78,
+            360
+        );
+
+    }
+
+
+    /*
+    ============================================================
+    MOVE
+    ============================================================
+    */
+
+    function move(direction) {
+
+        const page = getPage();
+
+        if (!page) {
+
+            return;
+
+        }
+
+
+        const range =
+            getHorizontalRange();
+
+
+        const amount =
+            getMovementAmount();
+
+
+        const target =
+            Math.max(
+                0,
+                Math.min(
+                    range.maximum,
+                    range.current +
+                    (
+                        direction *
+                        amount
+                    )
+                )
+            );
+
+
+        page.scrollTo({
+
+            left: target,
+
+            top: page.scrollTop,
+
+            behavior: "smooth"
+
+        });
+
+    }
+
+
+    /*
+    ============================================================
+    EVENT BINDING
+    ============================================================
+    */
+
+    function bindEvents() {
+
+        const page = getPage();
+
+        const {
+            left,
+            right
+        } = getButtons();
+
+
+        if (
+            !page ||
+            !left ||
+            !right
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            page.dataset
+                .geoshieldIntelligenceNavBound ===
+            "true"
+        ) {
+
+            updateButtons();
+
+            return true;
+
+        }
+
+
+        page.dataset
+            .geoshieldIntelligenceNavBound =
+            "true";
+
+
+        left.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                move(-1);
+
+            }
+        );
+
+
+        right.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                move(1);
+
+            }
+        );
+
+
+        page.addEventListener(
+            "scroll",
+            function () {
+
+                updateButtons();
+
+            },
+            {
+                passive: true
+            }
+        );
+
+
+        window.addEventListener(
+            "resize",
+            function () {
+
+                updateButtons();
+
+            },
+            {
+                passive: true
+            }
+        );
+
+
+        updateButtons();
+
+        return true;
+
+    }
+
+
+    /*
+    ============================================================
+    INITIALIZATION
+    ============================================================
+    */
+
+    function initialize() {
+
+        if (initialized) {
+
+            updateButtons();
+
+            return;
+
+        }
+
+
+        if (!bindEvents()) {
+
+            window.setTimeout(
+                initialize,
+                250
+            );
+
+            return;
+
+        }
+
+
+        initialized = true;
+
+
+        console.log(
+            "GeoShield Intelligence Horizontal Navigator: READY"
+        );
+
+    }
+
+
+    /*
+    ============================================================
+    PUBLIC API
+    ============================================================
+    */
+
+    window.GeoShieldSatelliteNavigator = {
+
+        initialize: initialize,
+
+        refresh: updateButtons,
+
+        left: function () {
+
+            move(-1);
+
+        },
+
+        right: function () {
+
+            move(1);
+
+        }
+
+    };
+
+
+    /*
+    ============================================================
+    START
+    ============================================================
+    */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            {
+                once: true
+            }
+        );
+
+    }
+    else {
+
+        initialize();
+
+    }
+
+})();

@@ -1,0 +1,312 @@
+﻿(function () {
+
+    "use strict";
+
+    const MAP_MODE = "geoshield-map-mode";
+    const INTELLIGENCE_MODE = "geoshield-intelligence-mode";
+
+    let currentWorkspace = "map";
+
+    function setWorkspace(mode) {
+
+        const isIntelligence =
+            mode === "intelligence";
+
+        currentWorkspace =
+            isIntelligence
+                ? "intelligence"
+                : "map";
+
+        document.body.classList.remove(
+            MAP_MODE,
+            INTELLIGENCE_MODE
+        );
+
+        document.body.classList.add(
+            isIntelligence
+                ? INTELLIGENCE_MODE
+                : MAP_MODE
+        );
+
+        /*
+         * IMPORTANT:
+         * Do NOT use scrollIntoView().
+         * Do NOT use IntersectionObserver.
+         * Do NOT let browser anchor scrolling
+         * determine the active workspace.
+         */
+
+        const mainContent =
+            document.querySelector(".main-content");
+
+        if (mainContent) {
+            mainContent.scrollTop = 0;
+        }
+
+        window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: "auto"
+        });
+
+        updateNavigator();
+
+        console.log(
+            "GeoShield workspace:",
+            currentWorkspace.toUpperCase()
+        );
+    }
+
+
+    function goToMainMap() {
+        setWorkspace("map");
+    }
+
+
+    function goToIntelligence() {
+        setWorkspace("intelligence");
+    }
+
+
+    function updateNavigator() {
+
+        const mapArrow =
+            document.getElementById(
+                "workspaceMapArrow"
+            );
+
+        const intelligenceArrow =
+            document.getElementById(
+                "workspaceIntelligenceArrow"
+            );
+
+        if (!mapArrow || !intelligenceArrow) {
+            return;
+        }
+
+        mapArrow.disabled =
+            currentWorkspace === "map";
+
+        intelligenceArrow.disabled =
+            currentWorkspace === "intelligence";
+
+        mapArrow.classList.toggle(
+            "active",
+            currentWorkspace === "map"
+        );
+
+        intelligenceArrow.classList.toggle(
+            "active",
+            currentWorkspace === "intelligence"
+        );
+    }
+
+
+    function createWorkspaceNavigator() {
+
+        /*
+         * ABSOLUTE DUPLICATE PROTECTION
+         */
+
+        let navigator =
+            document.getElementById(
+                "workspaceNavigator"
+            );
+
+        if (navigator) {
+            bindNavigationEvents(navigator);
+            updateNavigator();
+            return;
+        }
+
+
+        navigator =
+            document.createElement("div");
+
+        navigator.id =
+            "workspaceNavigator";
+
+        navigator.className =
+            "workspace-navigator";
+
+        navigator.setAttribute(
+            "aria-label",
+            "GeoShield workspace navigation"
+        );
+
+        navigator.innerHTML = `
+            <button
+                type="button"
+                class="workspace-nav-arrow"
+                id="workspaceMapArrow"
+                title="Main Map"
+                aria-label="Go to Main Map">
+                ↑
+            </button>
+
+            <div
+                class="workspace-nav-divider"
+                aria-hidden="true">
+            </div>
+
+            <button
+                type="button"
+                class="workspace-nav-arrow"
+                id="workspaceIntelligenceArrow"
+                title="Satellite Intelligence"
+                aria-label="Go to Satellite Intelligence">
+                ↓
+            </button>
+        `;
+
+
+        /*
+         * Put the navigator directly under BODY.
+         *
+         * It is position:fixed, so it cannot become
+         * part of the Satellite page layout.
+         */
+
+        document.body.appendChild(
+            navigator
+        );
+
+        bindNavigationEvents(navigator);
+
+        updateNavigator();
+    }
+
+
+    function bindNavigationEvents(navigator) {
+
+        if (
+            navigator.dataset
+                .geoshieldBound === "true"
+        ) {
+            return;
+        }
+
+        navigator.dataset.geoshieldBound =
+            "true";
+
+
+        navigator.addEventListener(
+            "click",
+            function (event) {
+
+                const button =
+                    event.target.closest(
+                        "button"
+                    );
+
+                if (!button) {
+                    return;
+                }
+
+
+                if (
+                    button.id ===
+                    "workspaceMapArrow"
+                ) {
+                    goToMainMap();
+                    return;
+                }
+
+
+                if (
+                    button.id ===
+                    "workspaceIntelligenceArrow"
+                ) {
+                    goToIntelligence();
+                    return;
+                }
+
+            }
+        );
+    }
+
+
+    function initialize() {
+
+        createWorkspaceNavigator();
+
+        /*
+         * ALWAYS start deterministically
+         * on the Main Map.
+         */
+
+        setWorkspace("map");
+
+        console.log(
+            "======================================"
+        );
+
+        console.log(
+            "GeoShield Workspace Navigation"
+        );
+
+        console.log(
+            "Mode: STATIC / DETERMINISTIC"
+        );
+
+        console.log(
+            "Main Map: ISOLATED"
+        );
+
+        console.log(
+            "Satellite Intelligence: ISOLATED"
+        );
+
+        console.log(
+            "IntersectionObserver: DISABLED"
+        );
+
+        console.log(
+            "Automatic scrolling: DISABLED"
+        );
+
+        console.log(
+            "Navigator duplication: BLOCKED"
+        );
+
+        console.log(
+            "======================================"
+        );
+    }
+
+
+    window.GeoShieldWorkspace = {
+
+        initialize: initialize,
+
+        goToMap: goToMainMap,
+
+        goToIntelligence:
+            goToIntelligence,
+
+        getCurrentWorkspace:
+            function () {
+                return currentWorkspace;
+            }
+
+    };
+
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+
+    } else {
+
+        initialize();
+
+    }
+
+})();

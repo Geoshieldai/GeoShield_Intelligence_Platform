@@ -1,0 +1,455 @@
+/* ===========================
+   GEOSHIELD OS V3
+=========================== */
+:root{
+
+--bg:#0b1220;
+--panel:#111827;
+--card:#1f2937;
+--border:#263449;
+
+--primary:#2563eb;
+
+--text:#ffffff;
+--muted:#94a3b8;
+
+--radius:12px;
+
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Segoe UI",sans-serif;
+}
+
+body{
+    background:#0b1220;
+    color:#fff;
+    overflow:hidden;
+}
+
+.app{
+    display:grid;
+    grid-template-columns:180px 1fr;
+    height:100vh;
+}
+
+/* ===========================
+LEFT SIDEBAR
+=========================== */
+
+.sidebar{
+    background:#0f172a;
+    border-right:1px solid #1f2937;
+    display:flex;
+    flex-direction:column;
+}
+
+.logo{
+    padding:14px 10px;
+    border-bottom:1px solid #1f2937;
+    text-align:center;
+}
+
+.logo h2{
+    font-size:18px;
+    font-weight:700;
+}
+
+.logo span{
+    color:#94a3b8;
+    font-size:11px;
+    line-height:1.4;
+    display:block;
+    margin-top:10px;
+}
+
+.sidebar nav{
+    padding:16px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    flex:1;
+    overflow-y:auto;
+}
+
+.sidebar a{
+    color:#d1d5db;
+    text-decoration:none;
+    padding: 12px 14px;
+    font-size:15px;
+    border-radius:10px;
+    transition:.25s;
+}
+
+.sidebar a:hover{
+    background:#1e293b;
+}
+
+.sidebar .active{
+    background:#2563eb;
+    color:white;
+}
+
+.sidebar hr{
+    border:none;
+    border-top:1px solid #263449;
+    margin:10px 0;
+}
+
+/* ===========================
+RIGHT SIDE
+=========================== */
+
+.main-content{
+    display:grid;
+    grid-template-rows:60px 1fr 110px;
+    height:100vh;
+    overflow:hidden;
+}
+
+/* ===========================
+TOP BAR
+=========================== */
+
+.topbar{
+    background:#172136;
+    border-bottom:1px solid #263449;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:0 20px;
+}
+
+.title h1{
+    font-size:22px;
+}
+
+.title span{
+    font-size:13px;
+    color:#94a3b8;
+}
+.top-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.top-actions button{
+    background:#1e293b;
+    color:white;
+    border:none;
+    padding:9px 16px;
+    border-radius:10px;
+    font-size:13px;
+    min-width:90px;
+    white-space:nowrap;
+    cursor:pointer;
+    transition:.25s;
+}
+
+.top-actions button:hover{
+    background:#2563eb;
+}
+
+/* ===========================
+CENTER
+=========================== */
+
+.workspace{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 280px;
+    gap:12px;
+    padding:8px;
+    overflow:hidden;
+}
+/* MAP */
+
+.map-section{
+    height:100%;
+    padding:0;
+   }
+
+#map{
+    width:100%;
+    height:100%;
+    border-radius:14px;
+    overflow:hidden;
+}
+/* RIGHT PANEL */
+
+.info-panel{
+    background:#111827;
+    border-left:1px solid #263449;
+    padding:10px;
+    overflow-y:auto;
+
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.panel-card{
+    background:#1f2937;
+    border-radius:12px;
+
+    padding:12px 14px;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+
+    min-height:78px;
+
+    transition:.25s;
+
+    box-shadow:0 2px 6px rgba(0,0,0,.18);
+
+    overflow:hidden;
+position:relative;
+
+}
+
+.panel-card h3{
+    font-size:15px;
+    font-weight:600;
+    margin-bottom:8px;
+
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.panel-card p{
+    font-size:12px;
+    color:#d1d5db;
+    line-height:1.5;
+}
+
+.panel-card h1{
+    font-size:24px;
+    font-weight:700;
+    margin-top:2px;
+}
+
+.panel-card:hover{
+    background:#273447;
+    transform:translateY(-2px);
+}
+/* ===========================
+BOTTOM
+=========================== */
+
+.bottom-dashboard{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:150px;
+
+    gap:10px;
+
+    overflow-x:auto;
+    overflow-y:hidden;
+
+   padding:8px 10px;
+
+    background:#111827;
+
+    border-top:1px solid #263449;
+
+    height:88px;
+
+    align-items:center;
+}
+
+.bottom-card{
+    background:#1f2937;
+
+    border-radius:12px;
+
+    padding:10px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:space-between;
+
+    height:62px;
+}
+.bottom-card h3{
+    font-size:12px;
+}
+
+.bottom-dashboard::-webkit-scrollbar{
+    height:6px;
+}
+
+.bottom-dashboard::-webkit-scrollbar-track{
+    background:#111827;
+}
+
+.bottom-dashboard::-webkit-scrollbar-thumb{
+    background:#2d3d58;
+    border-radius:10px;
+}
+
+.bottom-dashboard::-webkit-scrollbar-thumb:hover{
+    background:#3b82f6;
+}
+
+.pulse-fire{
+
+animation:pulseFire 1.2s infinite;
+
+}
+
+@keyframes pulseFire{
+
+0%{
+transform:scale(1);
+opacity:1;
+filter:drop-shadow(0 0 2px red);
+}
+
+50%{
+transform:scale(1.6);
+opacity:.6;
+filter:drop-shadow(0 0 12px orange);
+}
+
+100%{
+transform:scale(1);
+opacity:1;
+filter:drop-shadow(0 0 2px red);
+}
+
+}
+
+.legend{
+
+background:#1f2937;
+
+padding:12px;
+
+border-radius:10px;
+
+color:white;
+
+font-size:13px;
+
+line-height:22px;
+
+border:1px solid #374151;
+
+box-shadow:0 0 10px rgba(0,0,0,.5);
+
+}
+/* ============================================================
+   GEOSHIELD COLLAPSIBLE WORKSPACE
+   FINAL NAVIGATION OVERRIDE
+   ============================================================ */
+
+.workspace {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+}
+
+.map-section {
+    display: block !important;
+    width: 100% !important;
+    height: 70vh !important;
+    min-height: 520px !important;
+    overflow: hidden !important;
+}
+
+#map {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 520px !important;
+}
+
+#satelliteCenter[hidden] {
+    display: none !important;
+}
+
+#satelliteCenter.workspace-intelligence-active {
+    display: block !important;
+    width: 100% !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    margin-top: 24px !important;
+    margin-bottom: 80px !important;
+}
+
+#satelliteCenter.workspace-intelligence-active
+.satellite-grid {
+    display: grid !important;
+}
+
+#satelliteCenter.workspace-intelligence-active
+.satellite-center-header {
+    display: flex !important;
+}
+
+#sentinel2Product {
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+}
+
+.workspace-navigator {
+    position: fixed !important;
+    left: 50% !important;
+    bottom: 24px !important;
+    transform: translateX(-50%) !important;
+    z-index: 99999 !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    gap: 10px !important;
+
+    padding: 8px 10px !important;
+
+    border-radius: 16px !important;
+}
+
+.workspace-nav-arrow {
+    width: 46px !important;
+    height: 46px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    cursor: pointer !important;
+
+    font-size: 24px !important;
+    line-height: 1 !important;
+}
+
+.workspace-nav-arrow:disabled {
+    opacity: 0.35 !important;
+    cursor: default !important;
+}
+
+.workspace-nav-divider {
+    width: 1px !important;
+    height: 28px !important;
+}
+
+/* ============================================================
+   END FINAL WORKSPACE OVERRIDE
+   ============================================================ */

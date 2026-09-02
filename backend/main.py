@@ -1,3 +1,4 @@
+from backend.routes.osiri import router as osiri_router
 from backend.routes.dashboard import router as dashboard_router
 from backend.routes.county import router as county_router
 from fastapi import FastAPI
@@ -13,6 +14,9 @@ from backend.routes.resources import router as resources_router
 from backend.routes.alerts import router as alerts_router
 
 from backend.api.satellite import router as satellite_router
+from backend.api.sentinel2 import router as sentinel2_router
+from backend.api.satellites import router as satellites_router
+
 
 @asynccontextmanager
 async def lifespan(app):
@@ -44,6 +48,24 @@ app.include_router(
     tags=["Satellite"]
 )
 
+app.include_router(
+    satellites_router,
+    prefix="/satellites",
+    tags=["Satellite Intelligence"],
+)
+
+app.include_router(
+    sentinel2_router,
+    prefix="/sentinel2",
+    tags=["Sentinel-2"]
+)
+
+app.include_router(
+    satellites_router,
+    tags=["Satellites"]
+)
+
+
 app.mount(
     "/static",
     StaticFiles(directory="frontend/static"),
@@ -54,3 +76,5 @@ app.mount(
 @app.get("/")
 def home():
     return FileResponse("frontend/templates/index.html")
+
+app.include_router(osiri_router, prefix="/api/osiri", tags=["OSIRI Live Streams"])

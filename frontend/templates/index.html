@@ -1,233 +1,232 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoShield OS</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- GEOSHIELD CORE STYLES -->
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/sentinel2.css">
+    <link rel="stylesheet" href="/static/satellite-center.css">
+    <link rel="stylesheet" href="/static/workspace.css">
+    <link rel="stylesheet" href="/static/workspace-nav.css">
+    <link rel="stylesheet" href="/static/workspace-switcher.css">
+    <link rel="stylesheet" href="/static/satellites.css">
 
-<title>GeoShield OS</title>
-
-<link rel="stylesheet" href="/static/style.css">
-
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
-
+    <!-- LEAFLET -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css">
 </head>
-
 <body>
 <div class="app">
-
     <!-- LEFT SIDEBAR -->
-
     <aside class="sidebar">
-
         <div class="logo">
-
-            <h2>🛡 GEOSHIELD</h2>
-
+            <h2>GEOSHIELD</h2>
             <span>Geospatial Intelligence Platform</span>
-
         </div>
-
         <nav>
-
             <a class="active">🏠 Dashboard</a>
-
-            <a>🗺 Live Map</a>
-
+            <a id="navLiveMap" style="cursor:pointer;">🗺️ Live Map</a>
             <a>📈 Analytics</a>
-
             <a>🚨 Alerts</a>
-
             <a>📄 Reports</a>
-
             <hr>
-
             <a>🌊 Flood Engine</a>
-
             <a>🔥 Fire Engine</a>
-
             <a>🌍 Earthquake Engine</a>
-
-            <a>🌱 Agriculture</a>
-
+            <a>🌿 Agriculture</a>
             <hr>
-
-            <a>⚙ Settings</a>
-
+            <a>⚙️ Settings</a>
         </nav>
-
     </aside>
 
-
-
-    <!-- RIGHT SIDE -->
-
+    <!-- MAIN APPLICATION -->
     <main class="main-content">
-
         <!-- TOP BAR -->
-
         <header class="topbar">
-
             <div class="title">
-
                 <h1>GeoShield OS</h1>
-
                 <span>Real-Time Disaster Intelligence</span>
-
             </div>
-
             <div class="top-actions">
-
                 <select id="incidentType">
-
-    <option value="Fire">🔥 Fire</option>
-
-    <option value="Flood">🌊 Flood</option>
-
-    <option value="Earthquake">🌍 Earthquake</option>
-
-    <option value="Drought">🌾 Drought</option>
-
-    <option value="Disease">🦠 Disease</option>
-
-</select>
-
+                    <option value="Fire">🔥 Fire</option>
+                    <option value="Flood">🌊 Flood</option>
+                    <option value="Earthquake">🌍 Earthquake</option>
+                    <option value="Drought">🌾 Drought</option>
+                    <option value="Disease">🦠 Disease</option>
+                </select>
                 <button id="locateBtn">📍 Locate</button>
-
-                <button>🛰 Layers</button>
-
+                <button>🛰️ Layers</button>
                 <button>🚨 Alerts</button>
-
-                <button>⚙ Settings</button>
-
+                <button>⚙️ Settings</button>
             </div>
-
         </header>
 
-
-
-        <!-- CENTER -->
-
-        <section class="workspace">
-
-            <!-- MAP -->
-
-            <section class="map-section">
-
-                <div id="map"></div>
-
+        <!-- GEOSHIELD MAIN MAP PAGE -->
+        <section id="geoshieldMapPage" class="geoshield-workspace-page geoshield-map-page">
+            <section class="workspace">
+                <section class="map-section">
+                    <div id="map"></div>
+                </section>
+                <aside class="info-panel">
+                    <div class="panel-card">
+                        <h3>🟢 System Status</h3>
+                        <p id="health">Loading...</p>
+                    </div>
+                    <div class="panel-card">
+                        <h3>🌤️ Weather</h3>
+                        <p id="weather">Loading...</p>
+                    </div>
+                    <div class="panel-card">
+                        <h3>🚨 Active Alerts</h3>
+                        <h1 id="events">0</h1>
+                    </div>
+                    <div class="panel-card">
+                        <h3>🤖 AI Risk</h3>
+                        <h1 id="aiScore">0%</h1>
+                    </div>
+                    <div class="panel-card">
+                        <h3>🕒 Last Update</h3>
+                        <p id="lastUpdate">Loading...</p>
+                    </div>
+                    <div class="panel-card">
+                        <h3>🔥 Fire Risk</h3>
+                        <h1 id="fireRisk">LOW</h1>
+                    </div>
+                </aside>
             </section>
 
-
-
-            <!-- RIGHT INFO -->
-
-            <aside class="info-panel">
-
-                <div class="panel-card">
-
-                    <h3>🟢 System Status</h3>
-
-                    <p id="health">Loading...</p>
-
+            <!-- BOTTOM DASHBOARD -->
+            <section class="bottom-dashboard">
+                <div class="bottom-card">
+                    <h3>NDVI</h3>
+                    <h2 id="ndviCard">--</h2>
                 </div>
-
-                <div class="panel-card">
-
-                    <h3>🌤 Weather</h3>
-
-                    <p id="weather">Loading...</p>
-
+                <div class="bottom-card">
+                    <h3>Rainfall</h3>
+                    <h2 id="rainfallCard">--</h2>
                 </div>
-
-                <div class="panel-card">
-
-                    <h3>🚨 Active Alerts</h3>
-
-                    <h1 id="events">0</h1>
-
+                <div class="bottom-card">
+                    <h3>Temperature</h3>
+                    <h2 id="temperatureCard">--</h2>
                 </div>
-
-                <div class="panel-card">
-
-                    <h3>🤖 AI Risk</h3>
-
-                    <h1 id="aiScore">0%</h1>
-
+                <div class="bottom-card">
+                    <h3>Flood Risk</h3>
+                    <h2 id="floodRiskCard">--</h2>
                 </div>
-
-                <div class="panel-card">
-
-<h3>🕒 Last Update</h3>
-
-<p id="lastUpdate">Loading...</p>
-
-</div>
-
-                <div class="panel-card">
-
-                    <h3>🔥 Fire Risk</h3>
-
-                    <h1 id="fireRisk">LOW</h1>
-
+                <div class="bottom-card">
+                    <h3>Fire Risk</h3>
+                    <h2 id="fireRiskCard">--</h2>
                 </div>
-
-            </aside>
-
+                <div class="bottom-card">
+                    <h3>Population</h3>
+                    <h2 id="populationCard">--</h2>
+                </div>
+            </section>
         </section>
 
+        <!-- GEOSHIELD SATELLITE INTELLIGENCE PAGE -->
+        <section id="geoshieldIntelligencePage" class="geoshield-workspace-page geoshield-intelligence-page">
+            <section id="satelliteCenter" class="satellite-center">
+                <div class="satellite-center-header">
+                    <div>
+                        <h2>🛰️ Satellite Intelligence</h2>
+                        <p>Connected Earth-observation data sources powering GeoShield geospatial intelligence.</p>
+                    </div>
+                    <div class="satellite-header-right" style="display: flex; align-items: center; gap: 12px;">
+                        <div id="satelliteSystemStatus" class="satellite-system-status">
+                            Connecting...
+                        </div>
+                        <div class="satellite-nav-actions" style="display: flex; gap: 6px;">
+                            <button type="button" id="satelliteNavLeft" class="satellite-nav-btn" disabled>&#9664;</button>
+                            <button type="button" id="satelliteNavRight" class="satellite-nav-btn" disabled>&#9654;</button>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Viewport Container for Horizontal Track -->
+                <div id="satelliteGridViewport" class="satellite-grid-viewport">
+                    <div id="satelliteGrid" class="satellite-grid">
+                        <div class="satellite-loading">
+                            Loading satellite services...
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-        <!-- BOTTOM -->
-<section class="bottom-dashboard">
+            <!-- SENTINEL-2 IMAGERY PRODUCT -->
+            <section id="sentinel2Product" class="sentinel2-product">
+                <div class="sentinel2-header">
+                    <div>
+                        <h2>🛰️ Sentinel-2 Imagery</h2>
+                        <p>Copernicus Sentinel-2 Earth observation imagery for geospatial intelligence and environmental analysis.</p>
+                    </div>
+                    <span id="sentinel2Status" class="sentinel2-status">Ready</span>
+                </div>
+                <div class="sentinel2-controls">
+                    <div class="sentinel2-field">
+                        <label for="sentinel2StartDate">Start Date</label>
+                        <input type="date" id="sentinel2StartDate">
+                    </div>
+                    <div class="sentinel2-field">
+                        <label for="sentinel2EndDate">End Date</label>
+                        <input type="date" id="sentinel2EndDate">
+                    </div>
+                    <div class="sentinel2-field">
+                        <label for="sentinel2Cloud">Maximum Cloud Cover</label>
+                        <input type="number" id="sentinel2Cloud" min="0" max="100" step="1" value="30">
+                    </div>
+                    <button type="button" id="sentinel2SearchBtn" class="sentinel2-search-btn">
+                        Search Imagery
+                    </button>
+                </div>
+                <div id="sentinel2Results" class="sentinel2-results">
+                    <div class="sentinel2-empty">
+                        <strong>No Sentinel-2 scene selected</strong>
+                        <span>Search for available imagery to begin.</span>
+                    </div>
+                </div>
+            </section>
 
-    <div class="bottom-card">
-        <h3>NDVI</h3>
-        <h2 id="ndviCard">--</h2>
-    </div>
-
-    <div class="bottom-card">
-        <h3>Rainfall</h3>
-        <h2 id="rainfallCard">--</h2>
-    </div>
-
-    <div class="bottom-card">
-        <h3>Temperature</h3>
-        <h2 id="temperatureCard">--</h2>
-    </div>
-
-    <div class="bottom-card">
-        <h3>Flood Risk</h3>
-        <h2 id="floodRiskCard">--</h2>
-    </div>
-
-    <div class="bottom-card">
-        <h3>Fire Risk</h3>
-        <h2 id="fireRiskCard">--</h2>
-    </div>
-
-    <div class="bottom-card">
-        <h3>Population</h3>
-        <h2 id="populationCard">--</h2>
-    </div>
-
-</section>
-
-    </main>
-
+            <!-- OSIRI REAL-TIME & LIVE INTELLIGENCE WORKSPACE VIEW -->
+            <section id="osiriProduct" class="osiri-product" style="display: none; margin-top: 24px; background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 24px;">
+                <div class="osiri-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                    <div>
+                        <h2 style="margin: 0; color: #f8fafc;">📷 OSIRI Live Intelligence Engine</h2>
+                        <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 14px;">Open Source Intelligence & Real-Time Satellite Observation System</p>
+                    </div>
+                    <span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 10px; background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3);">ONLINE</span>
+                </div>
+                <div style="background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 20px; color: #f8fafc; font-family: monospace;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold; color: #64748b;">
+                        <span>SOURCE</span>
+                        <span>FUNCTION</span>
+                        <span>STATUS</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><span>Starlink</span><span>Orbital Tracking</span><span style="color: #4ade80;">🟢 LIVE</span></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><span>Sentinel-2</span><span>Optical EO</span><span style="color: #4ade80;">🟢 AVAILABLE</span></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><span>Sentinel-1</span><span>SAR EO</span><span style="color: #4ade80;">🟢 AVAILABLE</span></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><span>VIIRS</span><span>Fire / Thermal</span><span style="color: #4ade80;">🟢 AVAILABLE</span></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><span>Weather</span><span>Atmospheric Intelligence</span><span style="color: #4ade80;">🟢 LIVE</span></div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><span>OSINT</span><span>Incident Intelligence</span><span style="color: #4ade80;">🟢 LIVE</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Live Camera</span><span>Video Feed</span><span style="color: #94a3b8;">⚪ PROVIDER REQUIRED</span></div>
+                </div>
+            </section>
+        </section>
+    
+        <!-- OSIRI LIVE MAP FULLSCREEN WORKSPACE PAGE -->
+        
+</main>
 </div>
 
-<!-- Leaflet -->
-
+<!-- LEAFLET JAVASCRIPT -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
-
+<!-- GEOSHIELD JAVASCRIPT MODULES -->
 <script src="/static/config.js"></script>
 <script src="/static/utils.js"></script>
 <script src="/static/map.js"></script>
@@ -237,7 +236,65 @@ href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
 <script src="/static/counties.js"></script>
 <script src="/static/fire.js"></script>
 <script src="/static/legend.js"></script>
+<script src="/static/satellites.js?v=1788364370"></script>
+<script src="/static/sentinel2.js"></script>
+<script src="/static/workspace-nav.js"></script>
+<script src="/static/map-layout-lock.js"></script>
 <script src="/static/app.js"></script>
+<script src="/static/osiri-live-map.js"></script>
 
+        <!-- OSIRI LIVE MAP FULLSCREEN WORKSPACE PAGE -->
+        <section id="osiriLiveMapPage" style="display: none; position: fixed; inset: 0; z-index: 9000; background: #020617; width: 100vw; height: 100vh;">
+            <!-- Top Controls Toolbar -->
+            <div style="position: absolute; top: 16px; left: 16px; right: 16px; z-index: 9999; display: flex; justify-content: space-between; align-items: center; pointer-events: none;">
+                <div style="background: rgba(15,23,42,0.92); border: 1px solid #1e293b; backdrop-filter: blur(8px); padding: 10px 18px; border-radius: 8px; color: #f8fafc; pointer-events: auto; display: flex; align-items: center; gap: 16px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 15px; color: #38bdf8; display: flex; align-items: center; gap: 6px;">🗺️ OSIRI Live Surveillance Map</h3>
+                        <p style="margin: 2px 0 0 0; font-size: 11px; color: #94a3b8;">Real-time ground cameras & 24h auto-archived feeds</p>
+                    </div>
+                    <button type="button" onclick="window.toggleOsiriHistory()" style="background: #2563eb; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px;">
+                        📜 History (24h Recordings)
+                    </button>
+                </div>
+
+                <!-- RETURN / CLOSE (X) BUTTON TO MAIN MAP -->
+                <button type="button" onclick="window.closeOsiriLiveMap()" style="pointer-events: auto; background: #ef4444; color: #ffffff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: background 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                    <span style="font-size: 16px;">✕</span> Return to Main Map
+                </button>
+            </div>
+
+            <!-- Fullscreen Map Container -->
+            <div id="osiriFullscreenMap" style="width: 100%; height: 100%;"></div>
+
+            <!-- Video Player Modal -->
+            <div id="osiriStreamModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center;">
+                <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; width: 90%; max-width: 750px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 id="osiriStreamTitle" style="margin: 0; color: #f8fafc;">Live Camera Feed</h3>
+                        <button onclick="window.closeOsiriStream()" style="background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold;">✕</button>
+                    </div>
+                    <video id="osiriVideoPlayer" controls autoplay style="width: 100%; border-radius: 8px; background: #000; max-height: 420px;"></video>
+                </div>
+            </div>
+
+            <!-- 24h Recordings History Modal -->
+            <div id="osiriHistoryModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center;">
+                <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; width: 90%; max-width: 650px; padding: 20px; max-height: 80vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <div>
+                            <h3 style="margin: 0; color: #f8fafc;">📜 24-Hour Stream Archives</h3>
+                            <p style="margin: 2px 0 0 0; font-size: 11px; color: #94a3b8;">Daily 24h stream recordings stored automatically by date</p>
+                        </div>
+                        <button onclick="window.toggleOsiriHistory()" style="background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold;">✕</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 14px;">
+                        <input type="date" id="osiriHistoryDate" style="background: #020617; border: 1px solid #334155; color: #fff; padding: 8px; border-radius: 6px; flex: 1;">
+                        <button onclick="window.loadOsiriRecordings()" style="background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">Search Date</button>
+                    </div>
+                    <div id="osiriRecordingsList"></div>
+                </div>
+            </div>
+        </section>
+    
 </body>
 </html>

@@ -1,0 +1,1152 @@
+/*
+============================================================
+GeoShield AI Enterprise
+Satellite Intelligence Center
+Horizontal Satellite Navigator
+============================================================
+
+ARCHITECTURE:
+
+    Satellite Intelligence
+            |
+            v
+    Horizontal Satellite Track
+            |
+            +---- Sentinel-2
+            +---- Sentinel-1
+            +---- VIIRS
+            +---- GPM
+            +---- ERA5
+
+IMPORTANT:
+
+- No window scrolling
+- No scrollIntoView()
+- No IntersectionObserver
+- No anchor navigation
+- No workspace switching
+- Horizontal navigation uses CSS transform
+- Main Map / Intelligence navigation remains independent
+============================================================
+*/
+
+(function () {
+
+    "use strict";
+
+
+    const API_URL = "/satellites";
+
+
+    const ICONS = {
+
+        sentinel2: "\uD83D\uDEF0\uFE0F",
+
+        sentinel1: "\uD83D\uDCE1",
+
+        viirs: "\uD83D\uDD25",
+
+        gpm: "\uD83C\uDF27\uFE0F",
+
+        era5: "\uD83C\uDF0D"
+
+    };
+
+
+    let satelliteTrackPosition = 0;
+
+
+    /*
+    ============================================================
+    HTML ESCAPING
+    ============================================================
+    */
+
+    function escapeHtml(value) {
+
+        if (
+            value === null ||
+            value === undefined
+        ) {
+
+            return "";
+
+        }
+
+
+        return String(value)
+
+            .replace(/&/g, "&amp;")
+
+            .replace(/</g, "&lt;")
+
+            .replace(/>/g, "&gt;")
+
+            .replace(/"/g, "&quot;")
+
+            .replace(/'/g, "&#039;");
+
+    }
+
+
+    /*
+    ============================================================
+    CAPABILITY LIST
+    ============================================================
+    */
+
+    function createCapabilityList(capabilities) {
+
+        if (!Array.isArray(capabilities)) {
+
+            return "";
+
+        }
+
+
+        return capabilities
+
+            .map(function (capability) {
+
+                return `
+                    <span class="satellite-capability">
+                        ${escapeHtml(capability)}
+                    </span>
+                `;
+
+            })
+
+            .join("");
+
+    }
+
+
+    /*
+    ============================================================
+    SATELLITE CARD
+    ============================================================
+    */
+
+    function createSatelliteCard(satellite) {
+
+        const id =
+            escapeHtml(satellite.id);
+
+
+        const name =
+            escapeHtml(satellite.name);
+
+
+        const provider =
+            escapeHtml(satellite.provider);
+
+
+        const category =
+            escapeHtml(satellite.category);
+
+
+        const description =
+            escapeHtml(satellite.description);
+
+
+        const status =
+            satellite.status === "active"
+                ? "active"
+                : "planned";
+
+
+        const icon =
+            ICONS[satellite.id] ||
+            "\uD83D\uDEF0\uFE0F";
+
+
+        let button = "";
+
+
+        if (status === "active") {
+
+            button = `
+
+                <button
+                    type="button"
+                    class="satellite-open-btn"
+                    data-satellite-id="${id}">
+
+                    Open Satellite
+
+                </button>
+
+            `;
+
+        }
+
+        else {
+
+            button = `
+
+                <button
+                    type="button"
+                    class="satellite-open-btn planned"
+                    disabled>
+
+                    Coming Soon
+
+                </button>
+
+            `;
+
+        }
+
+
+        return `
+
+            <article
+                class="satellite-card ${status}"
+                data-satellite="${id}">
+
+                <div class="satellite-card-header">
+
+                    <div>
+
+                        <div class="satellite-icon">
+
+                            ${icon}
+
+                        </div>
+
+
+                        <h3 class="satellite-name">
+
+                            ${name}
+
+                        </h3>
+
+
+                        <div class="satellite-provider">
+
+                            ${provider}
+
+                        </div>
+
+                    </div>
+
+
+                    <span
+                        class="satellite-status ${status}">
+
+                        ${escapeHtml(
+                            satellite.status
+                        )}
+
+                    </span>
+
+                </div>
+
+
+                <div class="satellite-category">
+
+                    ${category}
+
+                </div>
+
+
+                <div class="satellite-description">
+
+                    ${description}
+
+                </div>
+
+
+                <div class="satellite-capabilities">
+
+                    ${createCapabilityList(
+                        satellite.capabilities
+                    )}
+
+                </div>
+
+
+                ${button}
+
+            </article>
+
+        `;
+
+    }
+
+
+    /*
+    ============================================================
+    HORIZONTAL TRACK
+    ============================================================
+    */
+
+    function resetSatelliteTrack() {
+
+        satelliteTrackPosition = 0;
+
+        updateSatelliteTrack();
+
+    }
+
+
+    function getSatelliteViewport() {
+
+        return document.getElementById(
+            "satelliteGridViewport"
+        );
+
+    }
+
+
+    function getSatelliteTrack() {
+
+        return document.getElementById(
+            "satelliteGrid"
+        );
+
+    }
+
+
+    function updateSatelliteTrack() {
+
+        const track =
+            getSatelliteTrack();
+
+
+        if (!track) {
+
+            return;
+
+        }
+
+
+        const viewport =
+            getSatelliteViewport();
+
+
+        if (!viewport) {
+
+            return;
+
+        }
+
+
+        const cards =
+            track.querySelectorAll(
+                ".satellite-card"
+            );
+
+
+        if (!cards.length) {
+
+            satelliteTrackPosition = 0;
+
+            track.style.transform =
+                "translate3d(0, 0, 0)";
+
+            updateSatelliteNavigator();
+
+            return;
+
+        }
+
+
+        const firstCard =
+            cards[0];
+
+
+        const cardStyle =
+            window.getComputedStyle(
+                firstCard
+            );
+
+
+        const cardWidth =
+            firstCard.getBoundingClientRect().width;
+
+
+        const gap =
+            parseFloat(
+                window.getComputedStyle(
+                    track
+                ).columnGap ||
+                window.getComputedStyle(
+                    track
+                ).gap ||
+                "0"
+            ) || 0;
+
+
+        const step =
+            cardWidth + gap;
+
+
+        const viewportWidth =
+            viewport.getBoundingClientRect().width;
+
+
+        const trackWidth =
+            track.scrollWidth;
+
+
+        const maximumOffset =
+            Math.max(
+                0,
+                trackWidth - viewportWidth
+            );
+
+
+        let offset =
+            satelliteTrackPosition *
+            step;
+
+
+        offset =
+            Math.min(
+                offset,
+                maximumOffset
+            );
+
+
+        track.style.transform =
+            `translate3d(${-offset}px, 0, 0)`;
+
+
+        updateSatelliteNavigator();
+
+    }
+
+
+    function moveSatelliteTrack(direction) {
+
+        const track =
+            getSatelliteTrack();
+
+
+        const viewport =
+            getSatelliteViewport();
+
+
+        if (
+            !track ||
+            !viewport
+        ) {
+
+            return;
+
+        }
+
+
+        const cards =
+            track.querySelectorAll(
+                ".satellite-card"
+            );
+
+
+        if (!cards.length) {
+
+            return;
+
+        }
+
+
+        const firstCard =
+            cards[0];
+
+
+        const cardWidth =
+            firstCard.getBoundingClientRect().width;
+
+
+        const gap =
+            parseFloat(
+                window.getComputedStyle(
+                    track
+                ).columnGap ||
+                window.getComputedStyle(
+                    track
+                ).gap ||
+                "0"
+            ) || 0;
+
+
+        const step =
+            cardWidth + gap;
+
+
+        const viewportWidth =
+            viewport.getBoundingClientRect().width;
+
+
+        const trackWidth =
+            track.scrollWidth;
+
+
+        const maximumOffset =
+            Math.max(
+                0,
+                trackWidth - viewportWidth
+            );
+
+
+        const maximumIndex =
+            Math.max(
+                0,
+                Math.ceil(
+                    maximumOffset /
+                    Math.max(step, 1)
+                )
+            );
+
+
+        satelliteTrackPosition +=
+            direction;
+
+
+        satelliteTrackPosition =
+            Math.max(
+                0,
+                Math.min(
+                    satelliteTrackPosition,
+                    maximumIndex
+                )
+            );
+
+
+        updateSatelliteTrack();
+
+    }
+
+
+    /*
+    ============================================================
+    NAVIGATOR STATE
+    ============================================================
+    */
+
+    function updateSatelliteNavigator() {
+
+        const leftButton =
+            document.getElementById(
+                "satelliteNavLeft"
+            );
+
+
+        const rightButton =
+            document.getElementById(
+                "satelliteNavRight"
+            );
+
+
+        if (
+            !leftButton ||
+            !rightButton
+        ) {
+
+            return;
+
+        }
+
+
+        const track =
+            getSatelliteTrack();
+
+
+        const viewport =
+            getSatelliteViewport();
+
+
+        if (
+            !track ||
+            !viewport
+        ) {
+
+            return;
+
+        }
+
+
+        const canMoveLeft =
+            satelliteTrackPosition > 0;
+
+
+        const cards =
+            track.querySelectorAll(
+                ".satellite-card"
+            );
+
+
+        if (!cards.length) {
+
+            leftButton.disabled = true;
+
+            rightButton.disabled = true;
+
+            return;
+
+        }
+
+
+        const firstCard =
+            cards[0];
+
+
+        const cardWidth =
+            firstCard.getBoundingClientRect().width;
+
+
+        const gap =
+            parseFloat(
+                window.getComputedStyle(
+                    track
+                ).columnGap ||
+                window.getComputedStyle(
+                    track
+                ).gap ||
+                "0"
+            ) || 0;
+
+
+        const step =
+            cardWidth + gap;
+
+
+        const maximumOffset =
+            Math.max(
+                0,
+                track.scrollWidth -
+                viewport.getBoundingClientRect().width
+            );
+
+
+        const currentOffset =
+            satelliteTrackPosition *
+            step;
+
+
+        const canMoveRight =
+            currentOffset <
+            maximumOffset - 2;
+
+
+        leftButton.disabled =
+            !canMoveLeft;
+
+
+        rightButton.disabled =
+            !canMoveRight;
+
+
+        leftButton.setAttribute(
+            "aria-disabled",
+            String(!canMoveLeft)
+        );
+
+
+        rightButton.setAttribute(
+            "aria-disabled",
+            String(!canMoveRight)
+        );
+
+    }
+
+
+    /*
+    ============================================================
+    SATELLITE NAVIGATOR EVENTS
+    ============================================================
+    */
+
+    function bindSatelliteNavigator() {
+
+        const leftButton =
+            document.getElementById(
+                "satelliteNavLeft"
+            );
+
+
+        const rightButton =
+            document.getElementById(
+                "satelliteNavRight"
+            );
+
+
+        if (
+            !leftButton ||
+            !rightButton
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            leftButton.dataset
+                .geoshieldHorizontalNavBound === "true"
+        ) {
+
+            return;
+
+        }
+
+
+        leftButton.dataset
+            .geoshieldHorizontalNavBound = "true";
+
+
+        rightButton.dataset
+            .geoshieldHorizontalNavBound = "true";
+
+
+        leftButton.addEventListener(
+            "click",
+            function () {
+
+                moveSatelliteTrack(-1);
+
+            }
+        );
+
+
+        rightButton.addEventListener(
+            "click",
+            function () {
+
+                moveSatelliteTrack(1);
+
+            }
+        );
+
+
+        window.addEventListener(
+            "resize",
+            function () {
+
+                updateSatelliteTrack();
+
+            }
+        );
+
+
+        updateSatelliteNavigator();
+
+    }
+
+
+    /*
+    ============================================================
+    SATELLITE BUTTONS
+    ============================================================
+    */
+
+    function bindSatelliteButtons() {
+
+        const buttons =
+            document.querySelectorAll(
+                ".satellite-open-btn[data-satellite-id]"
+            );
+
+
+        buttons.forEach(function (button) {
+
+            if (
+                button.dataset
+                    .geoshieldBound === "true"
+            ) {
+
+                return;
+
+            }
+
+
+            button.dataset
+                .geoshieldBound = "true";
+
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    const id =
+                        this.dataset.satelliteId;
+
+
+                    openSatellite(id);
+
+                }
+            );
+
+        });
+
+    }
+
+
+    /*
+    ============================================================
+    OPEN SATELLITE
+    ============================================================
+    */
+
+    function openSatellite(id) {
+
+        console.log(
+            "GeoShield satellite selected:",
+            id
+        );
+
+
+        /*
+        ========================================================
+        STATIC SATELLITE ACTIVATION
+
+        Satellite selection MUST NOT:
+
+        - scroll the page
+        - scroll .main-content
+        - change workspace
+        - use anchors
+        - use scrollIntoView()
+        - use window.scrollTo()
+        - use IntersectionObserver()
+
+        The horizontal satellite navigator is independent
+        from document/workspace scrolling.
+        ========================================================
+        */
+
+
+        if (id === "sentinel2") {
+
+            const section =
+                document.getElementById(
+                    "sentinel2Product"
+                );
+
+
+            if (!section) {
+
+                console.warn(
+                    "Sentinel-2 product section not found."
+                );
+
+                return;
+
+            }
+
+
+            section.classList.add(
+                "satellite-product-active"
+            );
+
+
+            window.setTimeout(
+                function () {
+
+                    section.classList.remove(
+                        "satellite-product-active"
+                    );
+
+                },
+                350
+            );
+
+
+            return;
+
+        }
+
+
+        console.log(
+            "Satellite interface not yet activated:",
+            id
+        );
+
+    }
+
+
+    /*
+    ============================================================
+    RENDER SATELLITES
+    ============================================================
+    */
+
+    function renderSatellites(payload) {
+
+        const grid =
+            document.getElementById(
+                "satelliteGrid"
+            );
+
+
+        const systemStatus =
+            document.getElementById(
+                "satelliteSystemStatus"
+            );
+
+
+        if (!grid) {
+
+            console.warn(
+                "GeoShield: satelliteGrid not found."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            !payload ||
+            !Array.isArray(
+                payload.satellites
+            )
+        ) {
+
+            grid.innerHTML = `
+
+                <div class="satellite-error">
+
+                    Satellite registry returned
+                    invalid data.
+
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        grid.innerHTML =
+            payload.satellites
+                .map(
+                    createSatelliteCard
+                )
+                .join("");
+
+
+        const satellites =
+            payload.satellites;
+
+
+        const total =
+            satellites.length;
+
+
+        const active =
+            satellites.filter(
+                function (satellite) {
+
+                    return (
+                        satellite.status ===
+                        "active"
+                    );
+
+                }
+            ).length;
+
+
+        if (systemStatus) {
+
+            systemStatus.textContent =
+                `${active} active / ${total} registered`;
+
+        }
+
+
+        bindSatelliteButtons();
+
+        /* Horizontal navigator handled by satellite-horizontal-navigator.js */
+
+        if (window.GeoShieldSatelliteNavigator && window.GeoShieldSatelliteNavigator.refresh) {
+
+            window.GeoShieldSatelliteNavigator.refresh();
+
+        }
+
+    }
+
+
+    /*
+    ============================================================
+    LOAD SATELLITES
+    ============================================================
+    */
+
+    async function loadSatellites() {
+
+        const grid =
+            document.getElementById(
+                "satelliteGrid"
+            );
+
+
+        if (!grid) {
+
+            return;
+
+        }
+
+
+        try {
+
+            grid.innerHTML = `
+
+                <div class="satellite-loading">
+
+                    Connecting to satellite registry...
+
+                </div>
+
+            `;
+
+
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+                        method: "GET",
+
+                        headers: {
+                            "Accept":
+                                "application/json"
+                        }
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `Satellite registry HTTP ${response.status}`
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            renderSatellites(data);
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "GeoShield satellite registry error:",
+                error
+            );
+
+
+            grid.innerHTML = `
+
+                <div class="satellite-error">
+
+                    Unable to connect to the
+                    satellite registry.
+
+                </div>
+
+            `;
+
+        }
+
+    }
+
+
+    /*
+    ============================================================
+    INITIALIZATION
+    ============================================================
+    */
+
+    function initialize() {
+
+        /* Horizontal navigator handled by satellite-horizontal-navigator.js */
+
+        loadSatellites();
+
+
+        console.log(
+            "GeoShield Satellite Intelligence initialized."
+        );
+
+
+        console.log(
+            "Horizontal satellite navigation: ENABLED"
+        );
+
+
+        console.log(
+            "Document scrolling: DISABLED"
+        );
+
+    }
+
+
+    /*
+    ============================================================
+    PUBLIC API
+    ============================================================
+    */
+
+    window.GeoShieldSatellites = {
+
+        initialize:
+            initialize,
+
+        load:
+            loadSatellites,
+
+        moveLeft:
+            function () {
+
+                moveSatelliteTrack(-1);
+
+            },
+
+        moveRight:
+            function () {
+
+                moveSatelliteTrack(1);
+
+            }
+
+    };
+
+
+    /*
+    ============================================================
+    START
+    ============================================================
+    */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            {
+                once: true
+            }
+        );
+
+    }
+
+    else {
+
+        initialize();
+
+    }
+
+
+})();
+

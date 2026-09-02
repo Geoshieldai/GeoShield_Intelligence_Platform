@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>GeoShield OS</title>
+
+    <!-- =========================================================
+         GEOSHIELD CORE STYLES
+         ========================================================= -->
+
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/sentinel2.css">
+    <link rel="stylesheet" href="/static/satellite-center.css">
+    <link rel="stylesheet" href="/static/workspace.css">
+    <link rel="stylesheet" href="/static/workspace-nav.css">
+<link rel="stylesheet" href="/static/workspace-switcher.css">
+    <link rel="stylesheet" href="/static/satellites.css">
+
+    <!-- =========================================================
+         LEAFLET
+         ========================================================= -->
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"
+    >
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <!-- =========================================================
+         LEFT SIDEBAR
+         ========================================================= -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <h2>GEOSHIELD</h2>
+            <span>Geospatial Intelligence Platform</span>
+        </div>
+
+        <nav>
+
+            <a class="active">🏠 Dashboard</a>
+            <a>🗺️ Live Map</a>
+            <a>📈 Analytics</a>
+            <a>🚨 Alerts</a>
+            <a>📄 Reports</a>
+
+            <hr>
+
+            <a>🌊 Flood Engine</a>
+            <a>🔥 Fire Engine</a>
+            <a>🌍 Earthquake Engine</a>
+            <a>🌿 Agriculture</a>
+
+            <hr>
+
+            <a>⚙️ Settings</a>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- =========================================================
+         MAIN APPLICATION
+         ========================================================= -->
+
+    <main class="main-content">
+
+
+        <!-- =====================================================
+             TOP BAR
+             ===================================================== -->
+
+        <header class="topbar">
+
+            <div class="title">
+
+                <h1>GeoShield OS</h1>
+
+                <span>
+                    Real-Time Disaster Intelligence
+                </span>
+
+            </div>
+
+
+            <div class="top-actions">
+
+                <select id="incidentType">
+
+                    <option value="Fire">
+                        🔥 Fire
+                    </option>
+
+                    <option value="Flood">
+                        🌊 Flood
+                    </option>
+
+                    <option value="Earthquake">
+                        🌍 Earthquake
+                    </option>
+
+                    <option value="Drought">
+                        🌾 Drought
+                    </option>
+
+                    <option value="Disease">
+                        🦠 Disease
+                    </option>
+
+                </select>
+
+
+                <button id="locateBtn">
+                    📍 Locate
+                </button>
+
+                <button>
+                    🛰️ Layers
+                </button>
+
+                <button>
+                    🚨 Alerts
+                </button>
+
+                <button>
+                    ⚙️ Settings
+                </button>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- =====================================================
+             GEOSHIELD MAIN MAP PAGE
+             ===================================================== -->
+
+        <section id="geoshieldMapPage" class="geoshield-workspace-page geoshield-map-page">
+
+        <!-- =====================================================
+             PRIMARY WORKSPACE
+             ===================================================== -->
+
+        <section class="workspace">
+
+
+            <!-- =================================================
+                 MAIN MAP
+                 ================================================= -->
+
+            <section class="map-section">
+
+                <div id="map"></div>
+
+            </section>
+
+
+            <!-- =================================================
+                 RIGHT INFORMATION PANEL
+                 ================================================= -->
+
+            <aside class="info-panel">
+
+
+                <div class="panel-card">
+
+                    <h3>🟢 System Status</h3>
+
+                    <p id="health">
+                        Loading...
+                    </p>
+
+                </div>
+
+
+                <div class="panel-card">
+
+                    <h3>🌤️ Weather</h3>
+
+                    <p id="weather">
+                        Loading...
+                    </p>
+
+                </div>
+
+
+                <div class="panel-card">
+
+                    <h3>🚨 Active Alerts</h3>
+
+                    <h1 id="events">
+                        0
+                    </h1>
+
+                </div>
+
+
+                <div class="panel-card">
+
+                    <h3>🤖 AI Risk</h3>
+
+                    <h1 id="aiScore">
+                        0%
+                    </h1>
+
+                </div>
+
+
+                <div class="panel-card">
+
+                    <h3>🕒 Last Update</h3>
+
+                    <p id="lastUpdate">
+                        Loading...
+                    </p>
+
+                </div>
+
+
+                <div class="panel-card">
+
+                    <h3>🔥 Fire Risk</h3>
+
+                    <h1 id="fireRisk">
+                        LOW
+                    </h1>
+
+                </div>
+
+
+            </aside>
+
+        </section>
+
+
+
+
+        <!-- =====================================================
+             BOTTOM DASHBOARD
+             ===================================================== -->
+
+        <section class="bottom-dashboard">
+
+
+            <div class="bottom-card">
+
+                <h3>NDVI</h3>
+
+                <h2 id="ndviCard">
+                    --
+                </h2>
+
+            </div>
+
+
+            <div class="bottom-card">
+
+                <h3>Rainfall</h3>
+
+                <h2 id="rainfallCard">
+                    --
+                </h2>
+
+            </div>
+
+
+            <div class="bottom-card">
+
+                <h3>Temperature</h3>
+
+                <h2 id="temperatureCard">
+                    --
+                </h2>
+
+            </div>
+
+
+            <div class="bottom-card">
+
+                <h3>Flood Risk</h3>
+
+                <h2 id="floodRiskCard">
+                    --
+                </h2>
+
+            </div>
+
+
+            <div class="bottom-card">
+
+                <h3>Fire Risk</h3>
+
+                <h2 id="fireRiskCard">
+                    --
+                </h2>
+
+            </div>
+
+
+            <div class="bottom-card">
+
+                <h3>Population</h3>
+
+                <h2 id="populationCard">
+                    --
+                </h2>
+
+            </div>
+
+
+        </section>
+
+
+        <!-- =====================================================
+             SATELLITE DATA CENTER
+             ===================================================== -->
+
+
+
+        </section>
+
+
+        <!-- =====================================================
+             GEOSHIELD SATELLITE INTELLIGENCE PAGE
+             ===================================================== -->
+
+        <section
+            id="geoshieldIntelligencePage"
+            class="geoshield-workspace-page geoshield-intelligence-page"
+        >
+
+        <!-- =====================================================
+             GEOSHIELD SATELLITE INTELLIGENCE CENTER
+             IMPORTANT:
+             workspace-nav.js targets #satelliteCenter
+             ===================================================== -->
+
+        <section
+            id="satelliteCenter"
+            class="satellite-center"
+        >
+
+            <div class="satellite-center-header">
+
+                <div>
+
+                    <h2>
+                        🛰️ Satellite Intelligence
+                    </h2>
+
+                    <p>
+                        Connected Earth-observation data sources
+                        powering GeoShield geospatial intelligence.
+                    </p>
+
+                </div>
+
+
+                <div
+                    id="satelliteSystemStatus"
+                    class="satellite-system-status"
+                >
+                    Connecting...
+                </div>
+
+            </div>
+            <!-- =================================================
+                 SATELLITE HORIZONTAL CARD VIEWPORT
+                 ================================================= -->
+
+            <div
+                id="satelliteGridViewport"
+                class="satellite-grid-viewport"
+            >
+
+                <div
+                    id="satelliteGrid"
+                    class="satellite-grid"
+                >
+
+                    <div class="satellite-loading">
+                        Loading satellite services...
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 STATIC SATELLITE HORIZONTAL NAVIGATOR
+                 ================================================= -->
+
+            <div
+                id="satelliteHorizontalNavigator"
+                class="satellite-horizontal-navigator"
+                aria-label="Satellite card navigation"
+            >
+
+                <button
+                    type="button"
+                    id="satelliteNavLeft"
+                    class="satellite-horizontal-nav-button"
+                    aria-label="Show previous satellites"
+                    title="Previous satellites"
+                >
+                    &#8592;
+                </button>
+
+
+                <div
+                    class="satellite-horizontal-nav-track"
+                    aria-hidden="true"
+                >
+
+                    <span
+                        class="satellite-horizontal-nav-line"
+                    ></span>
+
+                    <span
+                        class="satellite-horizontal-nav-center"
+                    ></span>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="satelliteNavRight"
+                    class="satellite-horizontal-nav-button"
+                    aria-label="Show next satellites"
+                    title="Next satellites"
+                >
+                    &#8594;
+                </button>
+
+            </div>
+
+
+        </section>
+
+
+        <!-- =====================================================
+             SENTINEL-2 IMAGERY PRODUCT
+             ===================================================== -->
+
+        <section
+            id="sentinel2Product"
+            class="sentinel2-product"
+        >
+
+            <div class="sentinel2-header">
+
+                <div>
+
+                    <h2>
+                        🛰️ Sentinel-2 Imagery
+                    </h2>
+
+                    <p>
+                        Copernicus Sentinel-2 Earth observation
+                        imagery for geospatial intelligence and
+                        environmental analysis.
+                    </p>
+
+                </div>
+
+
+                <span
+                    id="sentinel2Status"
+                    class="sentinel2-status"
+                >
+                    Ready
+                </span>
+
+            </div>
+
+
+            <!-- =================================================
+                 SENTINEL-2 SEARCH CONTROLS
+                 ================================================= -->
+
+            <div class="sentinel2-controls">
+
+
+                <div class="sentinel2-field">
+
+                    <label for="sentinel2StartDate">
+                        Start Date
+                    </label>
+
+                    <input
+                        type="date"
+                        id="sentinel2StartDate"
+                    >
+
+                </div>
+
+
+                <div class="sentinel2-field">
+
+                    <label for="sentinel2EndDate">
+                        End Date
+                    </label>
+
+                    <input
+                        type="date"
+                        id="sentinel2EndDate"
+                    >
+
+                </div>
+
+
+                <div class="sentinel2-field">
+
+                    <label for="sentinel2Cloud">
+                        Maximum Cloud Cover
+                    </label>
+
+                    <input
+                        type="number"
+                        id="sentinel2Cloud"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="30"
+                    >
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="sentinel2SearchBtn"
+                    class="sentinel2-search-btn"
+                >
+                    Search Imagery
+                </button>
+
+
+            </div>
+
+
+            <!-- =================================================
+                 SENTINEL-2 RESULTS
+                 ================================================= -->
+
+            <div
+                id="sentinel2Results"
+                class="sentinel2-results"
+            >
+
+                <div class="sentinel2-empty">
+
+                    <strong>
+                        No Sentinel-2 scene selected
+                    </strong>
+
+                    <span>
+                        Search for available imagery to begin.
+                    </span>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+
+
+        </section>
+    </main>
+
+</div>
+
+
+<!-- =============================================================
+     LEAFLET JAVASCRIPT
+     ============================================================= -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+
+<!-- =============================================================
+     GEOSHIELD JAVASCRIPT MODULES
+     ============================================================= -->
+
+<script src="/static/config.js"></script>
+
+<script src="/static/utils.js"></script>
+
+<script src="/static/map.js"></script>
+
+<script src="/static/controls.js"></script>
+
+<script src="/static/dashboard.js"></script>
+
+<script src="/static/infrastructure.js"></script>
+
+<script src="/static/counties.js"></script>
+
+<script src="/static/fire.js"></script>
+
+<script src="/static/legend.js"></script>
+
+<script src="/static/satellites.js"></script>
+
+<script src="/static/satellite-horizontal-navigator.js"></script>
+
+<script src="/static/sentinel2.js"></script>
+
+<!--
+    IMPORTANT:
+    workspace-nav.js creates the navigator dynamically.
+    There is intentionally NO workspaceNavigator HTML here.
+-->
+
+<script src="/static/workspace-nav.js"></script>
+
+<script src="/static/app.js"></script>
+
+
+</body>
+
+</html>

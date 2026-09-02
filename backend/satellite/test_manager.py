@@ -1,17 +1,38 @@
-import asyncio
+"""
+Live SatelliteManager integration tests.
+"""
+
+import pytest
 
 from backend.satellite.satellite_manager import SatelliteManager
 
 
-async def main():
+@pytest.mark.live
+@pytest.mark.asyncio
+async def test_satellite_manager_initializes():
+    """
+    Verify that SatelliteManager registers the Planet provider.
+    """
 
     manager = SatelliteManager()
 
-    planet = manager.provider("planet")
-
-    scenes = await planet.latest_images(limit=3)
-
-    print(scenes)
+    assert manager is not None
+    assert "planet" in manager.providers
 
 
-asyncio.run(main())
+@pytest.mark.live
+@pytest.mark.asyncio
+async def test_satellite_manager_planet_provider_returns_images():
+    """
+    Verify that the Planet provider is reachable through SatelliteManager.
+    """
+
+    manager = SatelliteManager()
+
+    planet_provider = manager.provider("planet")
+
+    assert planet_provider is not None
+
+    scenes = await planet_provider.latest_images(limit=3)
+
+    assert isinstance(scenes, list)

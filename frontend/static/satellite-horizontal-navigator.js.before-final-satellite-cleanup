@@ -1,0 +1,282 @@
+﻿(function () {
+
+    "use strict";
+
+    /*
+    ============================================================
+    GEOSHIELD AI ENTERPRISE
+    CANONICAL SATELLITE HORIZONTAL NAVIGATOR
+    ============================================================
+
+    RESPONSIBILITY:
+        ONLY control #satelliteGridViewport horizontally.
+
+    ALLOWED:
+        viewport.scrollLeft
+
+    FORBIDDEN:
+        scrollIntoView()
+        window.scrollTo()
+        window.scrollBy()
+        viewport.scrollBy()
+        IntersectionObserver
+        document scrolling
+        workspace switching
+        Sentinel-2 activation
+        transform-based card movement
+    ============================================================
+    */
+
+    const VIEWPORT_ID = "satelliteGridViewport";
+    const LEFT_BUTTON_ID = "satelliteNavLeft";
+    const RIGHT_BUTTON_ID = "satelliteNavRight";
+
+    let initialized = false;
+
+    function getElements() {
+
+        return {
+            viewport: document.getElementById(VIEWPORT_ID),
+            leftButton: document.getElementById(LEFT_BUTTON_ID),
+            rightButton: document.getElementById(RIGHT_BUTTON_ID)
+        };
+
+    }
+
+    function updateButtons() {
+
+        const {
+            viewport,
+            leftButton,
+            rightButton
+        } = getElements();
+
+        if (!viewport) {
+            return;
+        }
+
+        const maximumScroll = Math.max(
+            0,
+            viewport.scrollWidth - viewport.clientWidth
+        );
+
+        const currentScroll = viewport.scrollLeft;
+
+        if (leftButton) {
+            leftButton.disabled = currentScroll <= 2;
+        }
+
+        if (rightButton) {
+            rightButton.disabled =
+                currentScroll >= maximumScroll - 2;
+        }
+
+    }
+
+    function getMovementAmount() {
+
+        const {
+            viewport
+        } = getElements();
+
+        if (!viewport) {
+            return 0;
+        }
+
+        /*
+        Move approximately one card viewport at a time.
+        */
+
+        return Math.max(
+            Math.floor(viewport.clientWidth * 0.80),
+            300
+        );
+
+    }
+
+    function moveLeft() {
+
+        const {
+            viewport
+        } = getElements();
+
+        if (!viewport) {
+            return;
+        }
+
+        const amount = getMovementAmount();
+
+        viewport.scrollLeft =
+            Math.max(
+                0,
+                viewport.scrollLeft - amount
+            );
+
+        updateButtons();
+
+    }
+
+    function moveRight() {
+
+        const {
+            viewport
+        } = getElements();
+
+        if (!viewport) {
+            return;
+        }
+
+        const maximumScroll = Math.max(
+            0,
+            viewport.scrollWidth - viewport.clientWidth
+        );
+
+        const amount = getMovementAmount();
+
+        viewport.scrollLeft =
+            Math.min(
+                maximumScroll,
+                viewport.scrollLeft + amount
+            );
+
+        updateButtons();
+
+    }
+
+    function bindEvents() {
+
+        const {
+            viewport,
+            leftButton,
+            rightButton
+        } = getElements();
+
+        if (
+            !viewport ||
+            !leftButton ||
+            !rightButton
+        ) {
+            return false;
+        }
+
+        if (
+            viewport.dataset
+                .geoshieldHorizontalNavBound === "true"
+        ) {
+            updateButtons();
+            return true;
+        }
+
+        viewport.dataset
+            .geoshieldHorizontalNavBound = "true";
+
+        leftButton.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                moveLeft();
+
+            }
+        );
+
+        rightButton.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                moveRight();
+
+            }
+        );
+
+        viewport.addEventListener(
+            "scroll",
+            function () {
+
+                updateButtons();
+
+            },
+            {
+                passive: true
+            }
+        );
+
+        window.addEventListener(
+            "resize",
+            function () {
+
+                updateButtons();
+
+            },
+            {
+                passive: true
+            }
+        );
+
+        return true;
+
+    }
+
+    function initialize() {
+
+        if (initialized) {
+
+            updateButtons();
+            return;
+
+        }
+
+        if (!bindEvents()) {
+
+            window.setTimeout(
+                initialize,
+                250
+            );
+
+            return;
+
+        }
+
+        initialized = true;
+
+        updateButtons();
+
+        console.log(
+            "GeoShield: Canonical Satellite Horizontal Navigator READY"
+        );
+
+    }
+
+    window.GeoShieldSatelliteNavigator = {
+
+        initialize: initialize,
+        left: moveLeft,
+        right: moveRight,
+        refresh: updateButtons
+
+    };
+
+    if (
+        document.readyState === "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            {
+                once: true
+            }
+        );
+
+    } else {
+
+        initialize();
+
+    }
+
+})();

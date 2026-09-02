@@ -1,0 +1,420 @@
+(function () {
+
+    "use strict";
+
+    /*
+    ============================================================
+    GEOSHIELD COMPLETE SATELLITE INTELLIGENCE NAVIGATOR
+    ============================================================
+
+    RESPONSIBILITY:
+
+        Move the COMPLETE intelligence canvas horizontally.
+
+        The canvas includes:
+
+            - Satellite Intelligence cards
+            - Open Satellite panels
+            - Sentinel-2 imagery
+            - Future satellite product panels
+
+    IMPORTANT:
+
+        This navigator does NOT:
+
+            - move the document
+            - move window
+            - activate satellites
+            - open satellites
+            - control Sentinel-2
+            - use scrollIntoView()
+            - use window.scrollTo()
+            - use page.scrollTo()
+            - use scrollBy()
+            - use scrollLeft
+
+        Movement is performed using the dedicated
+        intelligence canvas transform.
+
+    ============================================================
+    */
+
+    const VIEWPORT_ID =
+        "satelliteIntelligenceViewport";
+
+    const CANVAS_ID =
+        "satelliteIntelligenceCanvas";
+
+    const LEFT_BUTTON_ID =
+        "satelliteNavLeft";
+
+    const RIGHT_BUTTON_ID =
+        "satelliteNavRight";
+
+
+    let position = 0;
+
+
+    function getElements() {
+
+        return {
+
+            viewport:
+                document.getElementById(
+                    VIEWPORT_ID
+                ),
+
+            canvas:
+                document.getElementById(
+                    CANVAS_ID
+                ),
+
+            left:
+                document.getElementById(
+                    LEFT_BUTTON_ID
+                ),
+
+            right:
+                document.getElementById(
+                    RIGHT_BUTTON_ID
+                )
+
+        };
+
+    }
+
+
+    function getRange() {
+
+        const {
+            viewport,
+            canvas
+        } = getElements();
+
+
+        if (!viewport || !canvas) {
+
+            return {
+
+                current: 0,
+                maximum: 0
+
+            };
+
+        }
+
+
+        const viewportWidth =
+            viewport.clientWidth;
+
+
+        const canvasWidth =
+            canvas.scrollWidth;
+
+
+        const maximum =
+            Math.max(
+                0,
+                canvasWidth -
+                viewportWidth
+            );
+
+
+        const current =
+            Math.max(
+                0,
+                Math.min(
+                    position,
+                    maximum
+                )
+            );
+
+
+        return {
+
+            current: current,
+            maximum: maximum
+
+        };
+
+    }
+
+
+    function update() {
+
+        const {
+            viewport,
+            canvas,
+            left,
+            right
+        } = getElements();
+
+
+        if (!viewport || !canvas) {
+
+            return;
+
+        }
+
+
+        const range =
+            getRange();
+
+
+        position =
+            range.current;
+
+
+        canvas.style.transform =
+            "translate3d(" +
+            (-position) +
+            "px, 0, 0)";
+
+
+        if (left) {
+
+            left.disabled =
+                position <= 1;
+
+        }
+
+
+        if (right) {
+
+            right.disabled =
+                position >=
+                range.maximum - 1;
+
+        }
+
+    }
+
+
+    function getMovementAmount() {
+
+        const {
+            viewport
+        } = getElements();
+
+
+        if (!viewport) {
+
+            return 0;
+
+        }
+
+
+        return Math.max(
+            viewport.clientWidth * 0.78,
+            360
+        );
+
+    }
+
+
+    function move(direction) {
+
+        const {
+            viewport,
+            canvas
+        } = getElements();
+
+
+        if (!viewport || !canvas) {
+
+            return;
+
+        }
+
+
+        const range =
+            getRange();
+
+
+        const amount =
+            getMovementAmount();
+
+
+        let target =
+            range.current +
+            (
+                direction *
+                amount
+            );
+
+
+        target =
+            Math.max(
+                0,
+                Math.min(
+                    target,
+                    range.maximum
+                )
+            );
+
+
+        position =
+            target;
+
+
+        canvas.style.transition =
+            "transform 320ms ease";
+
+
+        canvas.style.transform =
+            "translate3d(" +
+            (-position) +
+            "px, 0, 0)";
+
+
+        update();
+
+    }
+
+
+    function bind() {
+
+        const {
+            left,
+            right
+        } = getElements();
+
+
+        if (!left || !right) {
+
+            return false;
+
+        }
+
+
+        if (
+            left.dataset
+                .geoshieldCompleteNavBound ===
+            "true"
+        ) {
+
+            update();
+
+            return true;
+
+        }
+
+
+        left.dataset
+            .geoshieldCompleteNavBound =
+            "true";
+
+
+        right.dataset
+            .geoshieldCompleteNavBound =
+            "true";
+
+
+        left.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                move(-1);
+
+            }
+        );
+
+
+        right.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                move(1);
+
+            }
+        );
+
+
+        window.addEventListener(
+            "resize",
+            function () {
+
+                update();
+
+            }
+        );
+
+
+        update();
+
+        return true;
+
+    }
+
+
+    function initialize() {
+
+        if (bind()) {
+
+            console.log(
+                "GeoShield Complete Satellite Intelligence Navigator: READY"
+            );
+
+            return;
+
+        }
+
+
+        window.setTimeout(
+            initialize,
+            250
+        );
+
+    }
+
+
+    window.GeoShieldSatelliteNavigator = {
+
+        initialize: initialize,
+
+        refresh: update,
+
+        left: function () {
+
+            move(-1);
+
+        },
+
+        right: function () {
+
+            move(1);
+
+        }
+
+    };
+
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            {
+                once: true
+            }
+        );
+
+    }
+    else {
+
+        initialize();
+
+    }
+
+})();
